@@ -107,6 +107,7 @@
         </button>
       </div>
       <div class="topbar-actions">
+        <button id="btn-params" class="icon-btn" title="پارامترهای هوش مصنویی — خلاقیت، سهم فکر/توکن، Top P و دستور اختصاصی هر مدل"><svg class="ic"><use href="#i-sliders"/></svg></button>
         <button id="btn-clear-chat" class="icon-btn" title="پاک‌کردن گفتگوی فعلی"><svg class="ic"><use href="#i-trash"/></svg></button>
         <button id="btn-settings" class="icon-btn" title="تنظیمات"><svg class="ic"><use href="#i-gear"/></svg></button>
       </div>
@@ -123,12 +124,12 @@
           <img class="hero" src="img/hero.jpg" alt="سوکوت">
         </div>
         <div class="welcome-chips">
-          <span class="w-chip w-ver"><svg class="ic ic-sm"><use href="#i-spark"/></svg><span>نسخهٔ ۱٫۱۴٫۰</span></span>
+          <span class="w-chip w-ver"><svg class="ic ic-sm"><use href="#i-spark"/></svg><span>نسخهٔ ۱٫۱۵٫۰</span></span>
           <span class="w-chip" id="w-status"><i class="dot dot-off"></i><span>در حال اتصال…</span></span>
         </div>
         <h1>سلام! من سوکوت هستم</h1>
         <p class="sub">دستیار هوشمند فارسی با گفتگوی صوتی زنده، ساخت عکس، اجرای زندهٔ بازی، جستجوی وب و حافظهٔ بلندمدت — ساختهٔ <b>Sukot</b></p>
-        <p class="sub2">مغز اصلی: GLM 5.3 Flash (دال) · +۲۹ مدل فعال فری‌مدل (GPT/Claude/Gemini/Grok) · صدای ابری فارسی · رایگانِ تضمینی: پولینیشن</p>
+        <p class="sub2">مغز اصلی: GLM 5.3 Flash (دال) · +۲۹ مدل فعال فری‌مدل (GPT/Claude/Gemini/Grok) · پنل پارامترهای حرفه‌ای هر مدل · صدای ابری فارسی · رایگانِ تضمینی: پولینیشن</p>
         <a class="welcome-tg" href="https://t.me/SUKOT1344" target="_blank" rel="noopener">
           <svg class="ic ic-sm"><use href="#i-telegram"/></svg><span>عضویت در کانال تلگرام سوکوت</span>
         </a>
@@ -174,7 +175,7 @@
           <button class="suggestion"><svg class="ic ic-sm"><use href="#i-code"/></svg><span>یه صفحهٔ شخصی HTML مدرن با تم تیره برایم بساز</span></button>
           <button class="suggestion"><svg class="ic ic-sm"><use href="#i-cap"/></svg><span>فیزیک دهم — قانون اون را با مثال ساده توضیح بده</span></button>
         </div>
-        <p class="w-foot">ساخته‌شده با <svg class="ic ic-sm w-heart"><use href="#i-heart"/></svg> توسط <b>Sukot</b> · <span class="en" dir="ltr">v1.14.0</span></p>
+        <p class="w-foot">ساخته‌شده با <svg class="ic ic-sm w-heart"><use href="#i-heart"/></svg> توسط <b>Sukot</b> · <span class="en" dir="ltr">v1.15.0</span></p>
       </div>
     </div>
 
@@ -384,7 +385,8 @@
       </label>
       <label class="field">
         <span>خلاقیت پاسخ (Temperature): <b id="temp-val">0.7</b></span>
-        <input type="range" id="set-temp" min="0" max="1" step="0.05" value="0.7">
+        <input type="range" id="set-temp" min="0" max="2" step="0.05" value="0.7">
+        <span class="hint">کنترل کامل‌تر (سهم فکر/توکن خروجی، Top P و دستور اختصاصیِ هر مدل) در دکمهٔ <b>پارامترها</b> نوار بالای صفحه است — مثل پنل Parameters فری‌مدل.</span>
       </label>
       <label class="field">
         <span>شخصیت ربات (خالی = شخصیت پیش‌فرض سوکوت)</span>
@@ -525,8 +527,8 @@
     <div class="tab-page hidden" data-page="about">
       <div class="sub-box" style="text-align:center">
         <p style="font-size:17px;font-weight:bold;margin:8px 0 2px">سوکوت AI</p>
-        <p class="en" dir="ltr" style="font-size:11px;color:var(--muted2)">v1.14.0 · Sukot AI Bot</p>
-        <p class="hint" style="line-height:2;margin-top:8px">گفتگوی صوتی زنده با دایرهٔ رنگین و صدای ابری فارسی، ۲۹ مدل فعال فری‌مدل (GPT/Claude/Gemini/Grok)، ساخت عکس با هوش مصنوعی، استودیوی بازی‌سازی با اجرای زنده، ۵ دستیار تخصصی، آپلود فایل و عکس، جستجوی زندهٔ وب، قیمت لحظه‌ای ارز، حافظهٔ بلندمدت و سرویس‌های رایگان بدون کارت — روی اندروید، ویندوز و وب.</p>
+        <p class="en" dir="ltr" style="font-size:11px;color:var(--muted2)">v1.15.0 · Sukot AI Bot</p>
+        <p class="hint" style="line-height:2;margin-top:8px">گفتگوی صوتی زنده با دایرهٔ رنگین و صدای ابری فارسی، ۲۹ مدل فعال فری‌مدل (GPT/Claude/Gemini/Grok)، پنل پارامترهای حرفه‌ای هر مدل (Temperature/MaxTokens/TopP/System prompt)، ساخت عکس با هوش مصنوعی، استودیوی بازی‌سازی با اجرای زنده، ۵ دستیار تخصصی، آپلود فایل و عکس، جستجوی زندهٔ وب، قیمت لحظه‌ای ارز، حافظهٔ بلندمدت و سرویس‌های رایگان بدون کارت — روی اندروید، ویندوز و وب.</p>
       </div>
       <div class="modal-actions" style="flex-direction:column;gap:10px">
         <a id="btn-check-updates" class="btn btn-ghost" href="https://github.com/fffddeer4/sukot-ai-bot/releases/latest" target="_blank" rel="noopener"><svg class="ic"><use href="#i-download"/></svg><span>بررسی نسخهٔ جدید</span></a>
@@ -658,8 +660,8 @@
       <img class="about-hero" src="img/hero.jpg" alt="سوکوت AI">
     </div>
     <h2 class="about-name">سوکوت AI</h2>
-    <div class="about-ver" dir="ltr">v1.14.0</div>
-    <p class="about-desc">گفتگوی صوتی زنده با دایرهٔ رنگین (مثل ChatGPT) با صدای ابری فارسی، ۲۹ مدل فعال فری‌مدل (GPT · Claude · Gemini · Grok)، ساخت عکس مثل ChatGPT (رایگان، بدون کلید)، استودیوی بازی‌سازی با اجرای زندهٔ بازی داخل خود اپ، سرویس‌های رایگان بدون کارت (پولینیشن، Groq، Gemini)، آپلود فایل و عکس، غول‌های بالای ۳۰۰B، ابزارهای عامل، جستجوی زندهٔ وب، قیمت لحظه‌ای ارز، ۵ دستیار تخصصی و حافظهٔ بلندمدت — روی اندروید، ویندوز و وب.</p>
+    <div class="about-ver" dir="ltr">v1.15.0</div>
+    <p class="about-desc">گفتگوی صوتی زنده با دایرهٔ رنگین (مثل ChatGPT) با صدای ابری فارسی، ۲۹ مدل فعال فری‌مدل (GPT · Claude · Gemini · Grok)، پنل پارامترهای حرفه‌ای هر مدل مثل فری‌مدل (خلاقیت · سهم فکر و توکن · Top P · دستور اختصاصی)، ساخت عکس مثل ChatGPT (رایگان، بدون کلید)، استودیوی بازی‌سازی با اجرای زندهٔ بازی داخل خود اپ، سرویس‌های رایگان بدون کارت (پولینیشن، Groq، Gemini)، آپلود فایل و عکس، غول‌های بالای ۳۰۰B، ابزارهای عامل، جستجوی زندهٔ وب، قیمت لحظه‌ای ارز، ۵ دستیار تخصصی و حافظهٔ بلندمدت — روی اندروید، ویندوز و وب.</p>
     <a class="about-tg" href="https://t.me/SUKOT1344" target="_blank" rel="noopener">
       <svg class="ic ic-sm"><use href="#i-telegram"/></svg><span>کانال تلگرام: <b dir="ltr">@SUKOT1344</b></span>
     </a>
@@ -714,6 +716,55 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
+
+<!-- ===== Model Parameters (v1.15.0) — مثل پنل Parameters فری‌مدل ===== -->
+<div id="params-backdrop" class="backdrop backdrop-top hidden">
+  <div class="modal params-sheet" id="params-modal">
+    <div class="modal-header">
+      <h2><svg class="ic"><use href="#i-sliders"/></svg><span>پارامترهای هوش مصنویی</span></h2>
+      <button id="btn-close-params" class="icon-btn"><svg class="ic"><use href="#i-x"/></svg></button>
+    </div>
+    <p class="modal-desc" id="params-desc">مدل فعال —</p>
+    <div class="seg" id="params-scope">
+      <button type="button" class="seg-btn active" data-scope="model">فقط همین مدل</button>
+      <button type="button" class="seg-btn" data-scope="all">همهٔ مدل‌ها</button>
+    </div>
+    <label class="field">
+      <span>خلاقیت (Temperature): <b id="pt-temp-val">0.7</b></span>
+      <input type="range" id="pt-temp" min="0" max="2" step="0.05" value="0.7">
+      <span class="hint">کم = دقیق و ثابت · زیاد = خلاق و متنوع (مثل پنل Parameters فری‌مدل).</span>
+    </label>
+    <label class="field">
+      <span>سهم فکر و توکن خروجی (Max output tokens): <b id="pt-max-val">خودکار</b></span>
+      <input type="range" id="pt-max" min="256" max="32768" step="256" value="16384">
+      <span class="hint">هرچه بیشتر، مدل می‌تواند بیشتر فکر کند و پاسخ بلندتر بدهد؛ کمتر = سریع‌تر و مصرف توکن کمتر.</span>
+      <span class="chip-row" id="pt-max-chips">
+        <button type="button" data-max="1024">کوتاه ۱K</button>
+        <button type="button" data-max="4096">متعادل ۴K</button>
+        <button type="button" data-max="16384">بلند ۱۶K</button>
+        <button type="button" data-max="32768">حداکثر ۳۲K</button>
+      </span>
+    </label>
+    <label class="field check-field">
+      <input type="checkbox" id="pt-auto">
+      <span>خودکار — سهم توکن بر اساس «سبک پاسخ» تنظیم شود</span>
+    </label>
+    <label class="field">
+      <span>تنوع خروجی (Top P): <b id="pt-topp-val">1</b></span>
+      <input type="range" id="pt-topp" min="0.05" max="1" step="0.05" value="1">
+      <span class="hint">۱ = انتخاب آزاد · کمتر = فقط واژه‌های محتمل‌تر (خروجی یکنواخت‌تر و مهارشده‌تر).</span>
+    </label>
+    <label class="field">
+      <span>دستور اختصاصی مدل (System prompt — خالی = شخصیت پیش‌فرض سوکوت)</span>
+      <textarea id="pt-sys" rows="3" placeholder="Optional instructions for the model — مثلاً: فقط با لحن رسمی و کوتاه جواب بده…"></textarea>
+    </label>
+    <div class="modal-actions">
+      <button id="btn-params-reset" class="btn btn-ghost"><svg class="ic"><use href="#i-x"/></svg><span>پیش‌فرض سوکوت</span></button>
+      <button id="btn-params-done" class="btn btn-primary"><svg class="ic"><use href="#i-check"/></svg><span>تأیید</span></button>
+    </div>
+    <p class="hint" style="margin-top:10px;line-height:2">این پارامترها واقعاً داخل درخواست همهٔ سرویس‌ها (دال، فری‌مدل، کلادفلر، پولینیشن و…) فرستاده می‌شود. حالت «فقط همین مدل» برای هر مغز جدا ذخیره می‌شود — مثل اینکه هر هوش مصنویی تنظیمِ خودش را داشته باشد.</p>
+  </div>
+</div>
 
 <!-- ===== Voice Live Conversation (v1.14.0) — دایرهٔ رنگین گفتگوی صوتی ===== -->
 <div id="voice-backdrop" class="voice-backdrop hidden">

@@ -1,6 +1,17 @@
 /* ============================================================
-   سوکوت AI (Sukot AI) v1.14.0 — Persian AI chatbot
+   سوکوت AI (Sukot AI) v1.15.0 — Persian AI chatbot
    powered by FreeModel · Dahl(Gonka) · Cloudflare · Pollinations · tts.ai
+
+   v1.15.0 highlights
+   - پنل جدید «پارامترهای هوش مصنویی» مثل پنل Parameters فری‌مدل: خلاقیت
+     (Temperature)، سهم فکر و توکن خروجی (Max output tokens تا ۳۲K)،
+     تنوع خروجی (Top P) و دستور اختصاصی مدل (System prompt) — با دکمهٔ
+     لغزندهٔ جدید در نوار بالا، در دسترس روی اندروید، ویندوز و وب
+   - «هر مغز، تنظیمِ خودش»: پارامترها می‌توانند برای هر مدل جداگانه
+     ذخیره شوند (مدل مایی حافظهٔ پارامتری) یا سراسری برای همهٔ مدل‌ها
+   - این پارامترها واقعاً در بدنهٔ درخواست همهٔ سرویس‌ها (دال، فری‌مدل،
+     کلادفلر، پولینیشن، Groq، Gemini، Z.ai و سرویس دلخواه) اعمال می‌شود
+   - چیپ نارنجی روی دکمهٔ پارامترها = این مدل/تنظیمات از پیش‌فرض خارج شده
 
    v1.14.0 highlights
    - سرویس جدید «فری‌مدل» (freemodel.in) با کلید آمادهٔ شخصی — فقط ۲۹ مدلِ «فعال»
@@ -41,7 +52,7 @@
 'use strict';
 
 /* ---------- constants ---------- */
-const APP_VERSION = '1.14.0';
+const APP_VERSION = '1.15.0';
 const CREATOR = 'Sukot';
 const DEFAULT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 const LEGACY_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
@@ -147,6 +158,8 @@ const LS_MEM = 'sukot_ai_memory_v1';
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const numOr = (v, dflt) => { const n = Number(v); return isFinite(n) ? n : dflt; };
+const clampN = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
 /* storage that never crashes (some WebViews block localStorage) */
 const store = (() => {
@@ -435,7 +448,7 @@ function loadSettings() {
     fmToken: FM_DEFAULT_KEY, fmBase: FM_DEFAULT_BASE,
     provider: 'dahl',
     model: DEFAULT_MODEL, modelCustom: '',
-    sys: '', temp: 0.7, style: 'detailed',
+    sys: '', temp: 0.7, topP: 1, maxTok: 0, mParams: {}, style: 'detailed',
     cat: 'general', webSearch: 'auto', autoSpeak: false, speakRate: 1,
     agentTools: true,
     imageMode: false, imageEngine: 'auto', imgStyle: 'none',
@@ -485,6 +498,11 @@ function loadSettings() {
   if (out.model === LEGACY_MODEL && !out.modelPicked) { out.model = DEFAULT_MODEL; }
   /* مهاجرت خودکار مدل‌های مردهٔ ذخیره‌شده به جایگزین سالم */
   if (out.model && DEAD_MODELS[out.model]) { out.model = DEAD_MODELS[out.model]; }
+  /* v1.15.0: پارامترهای مدل — خلاقیت، سهم توکن/فکر، Top P و پارامتر اختصاصی هر مدل */
+  out.temp = clampN(numOr(out.temp, 0.7), 0, 2);
+  out.topP = clampN(numOr(out.topP, 1), 0.05, 1);
+  out.maxTok = clampN(Math.round(numOr(out.maxTok, 0)), 0, 32768);
+  if (!out.mParams || typeof out.mParams !== 'object' || Array.isArray(out.mParams)) out.mParams = {};
   if (!STYLES[out.style]) out.style = 'detailed';
   if (!CATEGORIES[out.cat]) out.cat = 'general';
   if (!['auto', 'always', 'off'].includes(out.webSearch)) out.webSearch = 'auto';
@@ -575,9 +593,11 @@ function todayFa() {
   }
 }
 
-function buildSystemPrompt(searchCtx) {
+function buildSystemPrompt(searchCtx, sysOverride) {
   const cat = CATEGORIES[settings.cat] || CATEGORIES.general;
-  const base = settings.sys && settings.sys.trim() ? settings.sys.trim() : cat.sys;
+  /* v1.15.0: اگر این مدل دستور اختصاصی (System prompt) داشته باشد، اولویت دارد */
+  const so = String(sysOverride || '').trim();
+  const base = so ? so : (settings.sys && settings.sys.trim() ? settings.sys.trim() : cat.sys);
   const style = STYLES[settings.style] || STYLES.detailed;
   let p = base + '\n\n' + style.desc;
   p += '\n\nتاریخ امروز: ' + todayFa() + '. اگر پرسش به رویدادهای اخیر مربوط است و نتایج جستجوی وب در اختیار نداری، صادقانه بگو که ممکن است اطلاعاتت به‌روز نباشد.';
@@ -2130,7 +2150,9 @@ async function send(textRaw) {
   }, 1000);
 
   /* پیام‌های محلی این نوبت (تبادل ابزار فقط همین‌جا می‌ماند و ذخیره نمی‌شود) */
-  const messages = [{ role: 'system', content: buildSystemPrompt(null) }].concat(buildHistory(c));
+  /* v1.15.0: پارامترهای مؤثر همین مدل — خلاقیت/سهم توکن/TopP/دستور اختصاصی */
+  const mp = modelParams();
+  const messages = [{ role: 'system', content: buildSystemPrompt(null, mp.sys) }].concat(buildHistory(c));
 
   /* — پیوست‌ها: فایل متنی داخل متن + تصویر به‌صورت image_url برای مدل بینا — */
   let visionNote = null;
@@ -2174,7 +2196,7 @@ async function send(textRaw) {
     const all = priceRes.concat(webRes || []);
     if (all.length) {
       searchResults = all;
-      messages[0].content = buildSystemPrompt({ query: text, results: all });
+      messages[0].content = buildSystemPrompt({ query: text, results: all }, mp.sys);
     } else {
       toast('جستجوی وب نتیجه‌ای نداشت — با دانش خودم پاسخ می‌دهم', true);
     }
@@ -2182,6 +2204,8 @@ async function send(textRaw) {
 
   const style = STYLES[settings.style] || STYLES.detailed;
   let maxTokens = style.max_tokens;
+  /* v1.15.0: اگر سهم اختصاصی توکن/فکر در «پارامترهای مدل» تنظیم شده باشد، اولویت دارد */
+  if (mp.maxTok > 0) maxTokens = mp.maxTok;
   /* مدل‌های استدلالی دال فکرشان را از سهم max_tokens مصرف می‌کنند — سهم کمتر از حداقل کافی نیست */
   const willUseDahl = settings.provider === 'dahl';
   if (willUseDahl) maxTokens = Math.max(maxTokens, DAHL_MIN_TOKENS);
@@ -2216,8 +2240,9 @@ async function send(textRaw) {
     finalErr = await new Promise((resolve) => {
       const body = {
         model: overrideModel || chosenModel(activeProvider), stream: true,
-        temperature: Number(settings.temp) || 0.7,
-        max_tokens: maxTokens,
+        temperature: mp.temp,        /* v1.15.0: خلاقیت از پنل پارامترها */
+        top_p: mp.topP,              /* v1.15.0: تنوع خروجی از پنل پارامترها */
+        max_tokens: maxTokens,       /* v1.15.0: سهم فکر/پاسخ از پنل پارامترها */
         messages: messages
       };
       activeStream = streamRequest(apiUrl(activeProvider), apiHeaders(activeProvider), body,
@@ -2236,7 +2261,7 @@ async function send(textRaw) {
        یک بار با سهم بزرگ‌تر ادامه بده (تست واقعی دال: با ۱۰۰ توکن فقط فکر می‌آید) */
     if (!finalErr && !stripThink(acc).text && activeProvider === 'dahl' && !reasoningRetried) {
       reasoningRetried = true;
-      maxTokens = Math.min(8192, Math.max(DAHL_MIN_TOKENS, maxTokens * 2));
+      maxTokens = Math.min(mp.maxTok > 0 ? mp.maxTok : 8192, Math.max(DAHL_MIN_TOKENS, maxTokens * 2));
       w.querySelector('.bubble').innerHTML = toolNoteHTML('مدل در حال فکر کردن بوده و سهم پاسخ تمام شده — خودکار با سهم بزرگ‌تر ادامه می‌دهم…');
       scrollBottom(false);
       round--; continue;
@@ -2612,6 +2637,110 @@ function updateModelTrigger() {
   let v = (sel && sel.value) ? sel.value : (settings.model || '');
   if (v === 'custom') v = (ci && ci.value.trim()) || settings.modelCustom || 'custom';
   lbl.textContent = prettyModel(v);
+}
+
+/* ============================================================
+   v1.15.0: پنل «پارامترهای هوش مصنویی» — مثل پنل Parameters فری‌مدل
+   خلاقیت (Temperature) · سهم فکر و توکن خروجی (Max output tokens) ·
+   تنوع خروجی (Top P) · دستور اختصاصی مدل (System prompt)
+   هر مدل می‌تواند پارامترِ مخصوص خودش را داشته باشد («هر مغز، تنظیمِ خودش»)
+   یا مقادیر سراسری برای همهٔ مدل‌ها اعمال شود — روی موبایل و کامپیوتر
+   ============================================================ */
+const PARAM_DEFAULTS = { temp: 0.7, topP: 1, maxTok: 0, sys: '' };
+let paramsScope = 'all';
+function modelParams(mid) {
+  const id = mid || chosenModel();
+  const per = (settings.mParams || {})[id];
+  return {
+    model: id,
+    temp: per && per.temp != null ? clampN(numOr(per.temp, PARAM_DEFAULTS.temp), 0, 2)
+      : clampN(numOr(settings.temp, PARAM_DEFAULTS.temp), 0, 2),
+    topP: per && per.topP != null ? clampN(numOr(per.topP, PARAM_DEFAULTS.topP), 0.05, 1)
+      : clampN(numOr(settings.topP, PARAM_DEFAULTS.topP), 0.05, 1),
+    maxTok: per && per.maxTok != null ? clampN(Math.round(numOr(per.maxTok, 0)), 0, 32768)
+      : clampN(Math.round(numOr(settings.maxTok, 0)), 0, 32768),
+    sys: per && typeof per.sys === 'string' && per.sys.trim() ? per.sys.trim()
+      : String(settings.sys || '').trim()
+  };
+}
+function faTok(n) {
+  if (!n || n <= 0) return 'خودکار';
+  return faNum(Number(n).toLocaleString('en-US'));
+}
+function paramsDesc() {
+  const mid = chosenModel();
+  const hasOwn = !!(settings.mParams || {})[mid];
+  return 'مدل فعال: <b>' + esc(prettyModel(mid)) + '</b> · سرویس: <b>' + esc((PROVIDERS[settings.provider] || {}).name || '') + '</b>' +
+    (hasOwn ? ' — این مدل <b>پارامتر اختصاصی خودش</b> را دارد ✓' : ' — این مدل الان از مقادیر سراسری پیروی می‌کند');
+}
+function syncParamsScope() {
+  document.querySelectorAll('#params-scope .seg-btn').forEach((b) => b.classList.toggle('active', b.dataset.scope === paramsScope));
+}
+function openParamsModal() {
+  const mid = chosenModel();
+  const per = (settings.mParams || {})[mid] || null;
+  paramsScope = per ? 'model' : 'all';
+  const mp = modelParams(mid);
+  $('#pt-temp').value = mp.temp;
+  $('#pt-temp-val').textContent = mp.temp;
+  $('#pt-topp').value = mp.topP;
+  $('#pt-topp-val').textContent = mp.topP;
+  const auto = !(mp.maxTok > 0);
+  $('#pt-auto').checked = auto;
+  $('#pt-max').value = auto ? 16384 : mp.maxTok;
+  $('#pt-max-val').textContent = faTok(mp.maxTok);
+  $('#pt-max').classList.toggle('off', auto);
+  document.querySelectorAll('#pt-max-chips button').forEach((x) => x.classList.toggle('active', auto ? false : Number(x.dataset.max) === mp.maxTok));
+  $('#pt-sys').value = per && typeof per.sys === 'string' ? per.sys : String(settings.sys || '');
+  $('#params-desc').innerHTML = paramsDesc();
+  syncParamsScope();
+  $('#params-backdrop').classList.remove('hidden');
+}
+function closeParamsModal() { $('#params-backdrop').classList.add('hidden'); }
+function saveParamsModal() {
+  const v = {
+    temp: clampN(numOr($('#pt-temp').value, 0.7), 0, 2),
+    topP: clampN(numOr($('#pt-topp').value, 1), 0.05, 1),
+    maxTok: $('#pt-auto').checked ? 0 : clampN(Math.round(numOr($('#pt-max').value, 16384)), 256, 32768),
+    sys: $('#pt-sys').value.trim()
+  };
+  const mid = chosenModel();
+  if (paramsScope === 'model') {
+    if (!settings.mParams || typeof settings.mParams !== 'object') settings.mParams = {};
+    settings.mParams[mid] = v;
+    toast('پارامترهای «' + prettyModel(mid) + '» ذخیره شد ✓');
+  } else {
+    settings.temp = v.temp;
+    settings.topP = v.topP;
+    settings.maxTok = v.maxTok;
+    settings.sys = v.sys;
+    toast('پارامترها برای همهٔ مدل‌ها ذخیره شد ✓');
+  }
+  saveSettings(settings);
+  updateParamsBtn();
+  closeParamsModal();
+}
+function resetParamsModal() {
+  $('#pt-temp').value = PARAM_DEFAULTS.temp; $('#pt-temp-val').textContent = PARAM_DEFAULTS.temp;
+  $('#pt-topp').value = PARAM_DEFAULTS.topP; $('#pt-topp-val').textContent = PARAM_DEFAULTS.topP;
+  $('#pt-auto').checked = true;
+  $('#pt-max').classList.add('off');
+  $('#pt-max').value = 16384; $('#pt-max-val').textContent = 'خودکار';
+  document.querySelectorAll('#pt-max-chips button').forEach((x) => x.classList.remove('active'));
+  $('#pt-sys').value = '';
+  toast('به پیش‌فرض سوکوت برگشت — حالا «تأیید» را بزن');
+}
+/* چیپ نارنجی روی دکمهٔ پارامترها: مدلِ فعلی پارامتر اختصاصی دارد یا مقادیر از پیش‌فرض خارج شده */
+function updateParamsBtn() {
+  const b = $('#btn-params');
+  if (!b) return;
+  const per = (settings.mParams || {})[chosenModel()];
+  const nonDefault = clampN(numOr(settings.temp, PARAM_DEFAULTS.temp), 0, 2) !== PARAM_DEFAULTS.temp ||
+    clampN(numOr(settings.topP, PARAM_DEFAULTS.topP), 0.05, 1) !== PARAM_DEFAULTS.topP ||
+    Math.round(numOr(settings.maxTok, 0)) !== 0 || !!(settings.sys || '').trim();
+  b.classList.toggle('has-params', !!per || nonDefault);
+  b.title = per ? 'پارامترهای هوش مصنویی — «' + prettyModel(chosenModel()) + '» پارامتر اختصاصی دارد'
+    : 'پارامترهای هوش مصنویی — خلاقیت، سهم فکر/توکن، Top P و دستور اختصاصی هر مدل';
 }
 
 /* ============================================================
@@ -3204,6 +3333,7 @@ function refreshStatus() {
     if (wd) wd.className = 'dot ' + (ok ? 'dot-on' : 'dot-off');
     if (wt) wt.textContent = ok ? 'متصل — مغز ' + prettyModel(chosenModel()) : 'آماده — فقط تنظیمات لازم است';
   }
+  updateParamsBtn();
   refreshCatBadge();
 }
 
@@ -3484,6 +3614,36 @@ function boot() {
     if (!v) { toast('آیدی دقیق مدل را وارد کن', true); return; }
     applyPickedModel(v, true);
   });
+
+  /* — v1.15.0: پنل پارامترهای هوش مصنویی — موبایل و کامپیوتر — */
+  $('#btn-params').addEventListener('click', openParamsModal);
+  $('#btn-close-params').addEventListener('click', closeParamsModal);
+  $('#params-backdrop').addEventListener('click', (e) => { if (e.target.id === 'params-backdrop') closeParamsModal(); });
+  $('#pt-temp').addEventListener('input', () => { $('#pt-temp-val').textContent = $('#pt-temp').value; });
+  $('#pt-topp').addEventListener('input', () => { $('#pt-topp-val').textContent = $('#pt-topp').value; });
+  $('#pt-max').addEventListener('input', () => {
+    $('#pt-max-val').textContent = faTok(Number($('#pt-max').value));
+    document.querySelectorAll('#pt-max-chips button').forEach((x) => x.classList.toggle('active', Number(x.dataset.max) === Number($('#pt-max').value)));
+  });
+  $('#pt-auto').addEventListener('change', () => {
+    const auto = $('#pt-auto').checked;
+    $('#pt-max').classList.toggle('off', auto);
+    $('#pt-max-val').textContent = auto ? 'خودکار' : faTok(Number($('#pt-max').value));
+  });
+  document.querySelectorAll('#pt-max-chips button').forEach((b) => {
+    b.addEventListener('click', () => {
+      $('#pt-auto').checked = false;
+      $('#pt-max').classList.remove('off');
+      $('#pt-max').value = b.dataset.max;
+      $('#pt-max-val').textContent = faTok(Number(b.dataset.max));
+      document.querySelectorAll('#pt-max-chips button').forEach((x) => x.classList.toggle('active', x === b));
+    });
+  });
+  document.querySelectorAll('#params-scope .seg-btn').forEach((b) => {
+    b.addEventListener('click', () => { paramsScope = b.dataset.scope; syncParamsScope(); });
+  });
+  $('#btn-params-done').addEventListener('click', saveParamsModal);
+  $('#btn-params-reset').addEventListener('click', resetParamsModal);
 
   /* مدیریت API: حذف API ذخیره‌شده (تأیید دومرحله‌ای) */
   armTwoStep($('#btn-api-delete'), () => {
