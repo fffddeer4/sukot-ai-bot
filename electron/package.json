@@ -1,13 +1,13 @@
 {
   "name": "sukot-ai-bot",
-  "version": "1.10.1",
+  "version": "1.14.0",
   "description": "ربات گفتگوی هوشمند فارسی — Sukot AI Bot (Cloudflare Workers AI)",
   "main": "main.js",
-  "author": "sukot5104-lang",
+  "author": "fffddeer4 (Sukot)",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sukot5104-lang/sukot-ai-bot.git"
+    "url": "git+https://github.com/fffddeer4/sukot-ai-bot.git"
   },
   "scripts": {
     "start": "electron .",

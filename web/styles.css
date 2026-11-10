@@ -936,3 +936,115 @@ body.no-anim .petals{display:none}
 }
 .mg-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border),transparent)}
 body[data-theme="light"] .mg-title{color:#6b6480}
+
+/* ============================================================
+   v1.14.0 — گفتگوی صوتی زنده: دایرهٔ بزرگِ رنگین + زیرنویس زنده
+   حالت‌های دایره: idle (نفس‌کشِ آبی) / listening (سبز + حلقه‌ها)
+   / thinking (بنفشِ چرخان) / speaking (رنگین‌چرخان با hue-rotate)
+   ============================================================ */
+.voice-backdrop{
+  position:fixed;inset:0;z-index:95;display:flex;flex-direction:column;gap:12px;
+  background:radial-gradient(1200px 700px at 50% -10%,rgba(124,58,237,.35),transparent 60%),
+             linear-gradient(180deg,#150b28 0%,#0c0716 55%,#0a0614 100%);
+  padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+  overflow-y:auto;animation:fadein .2s ease;
+}
+.voice-backdrop.hidden{display:none}
+.vc-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.vc-title{display:inline-flex;align-items:center;gap:8px;font-weight:bold;font-size:14px;color:var(--text)}
+.vc-title .ic{color:var(--accent)}
+.vc-stage{display:flex;flex-direction:column;align-items:center;gap:10px;padding:10px 0 4px}
+.vc-stage p{font-size:13px;color:var(--muted);margin:2px 0 0}
+.vc-orb{
+  --vc-a:#a855f7;--vc-b:#7c3aed;
+  position:relative;width:min(230px,62vw);aspect-ratio:1;border-radius:50%;
+  background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.35),transparent 42%),
+             linear-gradient(135deg,var(--vc-a),var(--vc-b) 60%,var(--vc-a));
+  box-shadow:0 0 60px rgba(168,85,247,.45),0 0 130px rgba(124,58,237,.25),inset 0 0 40px rgba(255,255,255,.08);
+  transition:background .5s ease,box-shadow .5s ease;
+}
+.vc-orb>i{position:absolute;inset:-14px;border-radius:50%;border:2px solid var(--vc-a);opacity:0;pointer-events:none}
+/* — idle: نفس‌کشِ آرام — */
+.vc-orb[data-state="idle"]{animation:vcBreathe 3.6s ease-in-out infinite}
+/* — listening: سبزِ پرچم + حلقه‌های پخش‌شونده — */
+.vc-orb[data-state="listening"]{--vc-a:#3ddc97;--vc-b:#0e9f6e;animation:vcPulse 1.15s ease-in-out infinite}
+.vc-orb[data-state="listening"]>i{opacity:.75;animation:vcRing 1.8s ease-out infinite}
+.vc-orb[data-state="listening"]>i.r2{animation-delay:.6s}
+.vc-orb[data-state="listening"]>i.r3{animation-delay:1.2s}
+/* — thinking: بنفشِ چرخان — */
+.vc-orb[data-state="thinking"]{--vc-a:#c084fc;--vc-b:#6d28d9;animation:vcSpin 1.5s linear infinite}
+/* — speaking: رنگین‌چرخان — رنگ دایره مدام عوض می‌شود — */
+.vc-orb[data-state="speaking"]{animation:vcBounce .8s ease-in-out infinite,vcHue 5s linear infinite}
+@keyframes vcBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+@keyframes vcPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.09)}}
+@keyframes vcRing{0%{transform:scale(.92);opacity:.8}100%{transform:scale(1.55);opacity:0}}
+@keyframes vcSpin{0%{transform:scale(1) rotate(0)}50%{transform:scale(1.05) rotate(180deg)}100%{transform:scale(1) rotate(360deg)}}
+@keyframes vcBounce{0%,100%{transform:scale(1)}30%{transform:scale(1.07)}60%{transform:scale(.97)}}
+@keyframes vcHue{0%{filter:hue-rotate(0deg) saturate(1.2)}100%{filter:hue-rotate(360deg) saturate(1.2)}}
+.vc-unsup{
+  max-width:420px;text-align:center;font-size:12px;color:var(--muted);
+  background:rgba(168,85,247,.10);border:1px dashed var(--border-soft);
+  border-radius:14px;padding:10px 14px;line-height:2;
+}
+.vc-transcript{display:flex;flex-direction:column;gap:7px;max-width:560px;width:100%;margin:0 auto}
+.vc-line{
+  font-size:13px;line-height:2;color:var(--text);
+  background:rgba(13,7,25,.6);border:1px solid var(--border);
+  border-radius:14px;padding:9px 13px;min-height:20px;word-break:break-word;
+}
+.vc-line.user{border-color:var(--border-soft)}
+.vc-line.bot{background:rgba(168,85,247,.12)}
+.vc-line .vc-hint{color:var(--muted2);font-size:12px}
+.vc-type-row{display:flex;gap:8px;max-width:560px;width:100%;margin:0 auto}
+.vc-type-row input{
+  flex:1;min-width:0;background:rgba(13,7,25,.7);border:1.5px solid var(--border);
+  border-radius:14px;padding:11px 14px;color:var(--text);font-family:inherit;font-size:13.5px;outline:none;
+}
+.vc-type-row input:focus{border-color:var(--accent)}
+.vc-controls{display:flex;align-items:center;justify-content:center;gap:16px;padding:2px 0 6px}
+.vc-mic{
+  width:64px;height:64px;border-radius:50%;border:none;cursor:pointer;color:#fff;
+  background:var(--grad);box-shadow:var(--glow);
+  display:grid;place-items:center;transition:transform .15s ease,box-shadow .2s ease;
+}
+.vc-mic:hover{transform:scale(1.05)}
+.vc-mic:active{transform:scale(.94)}
+.vc-mic.listening{background:linear-gradient(135deg,#3ddc97,#0e9f6e);box-shadow:0 0 34px rgba(61,220,151,.5);animation:vcPulse 1.15s ease-in-out infinite}
+.vc-btn2{
+  width:48px;height:48px;border-radius:50%;border:1.5px solid var(--border);cursor:pointer;
+  background:rgba(13,7,25,.7);color:var(--muted);display:grid;place-items:center;transition:all .15s ease;
+}
+.vc-btn2:hover{color:var(--text);border-color:var(--accent)}
+body[data-theme="light"] .voice-backdrop{background:radial-gradient(1200px 700px at 50% -10%,rgba(124,58,237,.18),transparent 60%),linear-gradient(180deg,#f3edfd,#ffffff)}
+body[data-theme="light"] .vc-line{background:#ffffff;border-color:var(--border)}
+body[data-theme="light"] .vc-line.bot{background:#f3ecff}
+body[data-theme="light"] .vc-type-row input{background:#ffffff}
+
+/* — v1.14.0: چیپ «با مغز …» زیر هر پاسخ — */
+.brain-tag{
+  display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--muted);
+  background:rgba(168,85,247,.10);border:1px solid var(--border-soft);
+  border-radius:99px;padding:2.5px 10px;
+}
+.brain-tag.hidden{display:none}
+.brain-tag .ic{color:var(--accent)}
+/* — شمارندهٔ ثانیه روی حبابِ تایپ — */
+.t-sec{font-size:11px;color:var(--muted2);margin-inline-start:7px}
+/* — دکمهٔ میکروفون کامپوزر (حالت فعال) — */
+.btn-voice{color:var(--accent)}
+.btn-voice:hover{border-color:rgba(168,85,247,.6)}
+body.no-anim .vc-orb,body.no-anim .vc-orb>i,body.no-anim .vc-mic.listening{animation:none}
+
+/* — v1.14.0: تم‌های رنگی دایرهٔ گفتگوی صوتی (۶ تم) — */
+#voice-backdrop[data-vtheme="blue"] .vc-orb{--vc-a:#38bdf8;--vc-b:#0369a1}
+#voice-backdrop[data-vtheme="blue"] .vc-orb[data-state="listening"]{--vc-a:#22d3ee;--vc-b:#0e7490}
+#voice-backdrop[data-vtheme="green"] .vc-orb{--vc-a:#34d399;--vc-b:#059669}
+#voice-backdrop[data-vtheme="green"] .vc-orb[data-state="listening"]{--vc-a:#a7f3d0;--vc-b:#10b981}
+#voice-backdrop[data-vtheme="orange"] .vc-orb{--vc-a:#fb923c;--vc-b:#ea580c}
+#voice-backdrop[data-vtheme="orange"] .vc-orb[data-state="listening"]{--vc-a:#fdba74;--vc-b:#f97316}
+#voice-backdrop[data-vtheme="pink"] .vc-orb{--vc-a:#f472b6;--vc-b:#db2777}
+#voice-backdrop[data-vtheme="pink"] .vc-orb[data-state="listening"]{--vc-a:#fbcfe8;--vc-b:#ec4899}
+#voice-backdrop[data-vtheme="rainbow"] .vc-orb{--vc-a:#a855f7;--vc-b:#3b82f6}
+#voice-backdrop[data-vtheme="rainbow"] .vc-orb[data-state="listening"]{--vc-a:#3ddc97;--vc-b:#0e9f6e}
+#voice-backdrop[data-vtheme="rainbow"] .vc-orb[data-state="thinking"]{--vc-a:#fbbf24;--vc-b:#d97706}
+#voice-backdrop[data-vtheme="rainbow"] .vc-orb[data-state="speaking"]{--vc-a:#f472b6;--vc-b:#38bdf8}

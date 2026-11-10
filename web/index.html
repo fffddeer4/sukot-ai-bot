@@ -123,18 +123,18 @@
           <img class="hero" src="img/hero.jpg" alt="سوکوت">
         </div>
         <div class="welcome-chips">
-          <span class="w-chip w-ver"><svg class="ic ic-sm"><use href="#i-spark"/></svg><span>نسخهٔ ۱٫۱۰٫۱</span></span>
+          <span class="w-chip w-ver"><svg class="ic ic-sm"><use href="#i-spark"/></svg><span>نسخهٔ ۱٫۱۴٫۰</span></span>
           <span class="w-chip" id="w-status"><i class="dot dot-off"></i><span>در حال اتصال…</span></span>
         </div>
         <h1>سلام! من سوکوت هستم</h1>
-        <p class="sub">دستیار هوشمند فارسی با ساخت عکس، اجرای زندهٔ بازی، جستجوی وب و حافظهٔ بلندمدت — ساختهٔ <b>Sukot</b></p>
-        <p class="sub2">مغز اصلی: GLM 5.3 Flash (سرویس دال) · رایگانِ تضمینی: Pollinations · Groq · Gemini</p>
+        <p class="sub">دستیار هوشمند فارسی با گفتگوی صوتی زنده، ساخت عکس، اجرای زندهٔ بازی، جستجوی وب و حافظهٔ بلندمدت — ساختهٔ <b>Sukot</b></p>
+        <p class="sub2">مغز اصلی: GLM 5.3 Flash (دال) · +۲۹ مدل فعال فری‌مدل (GPT/Claude/Gemini/Grok) · صدای ابری فارسی · رایگانِ تضمینی: پولینیشن</p>
         <a class="welcome-tg" href="https://t.me/SUKOT1344" target="_blank" rel="noopener">
           <svg class="ic ic-sm"><use href="#i-telegram"/></svg><span>عضویت در کانال تلگرام سوکوت</span>
         </a>
         <div class="w-stats">
-          <div class="w-stat"><b>۳</b><span>مغز استدلالی قوی</span></div>
-          <div class="w-stat"><b>۵</b><span>دستیار تخصصی</span></div>
+          <div class="w-stat"><b>۳۲</b><span>مغز استدلالی (دال + فری‌مدل)</span></div>
+          <div class="w-stat"><b>۶</b><span>دستیار تخصصی</span></div>
           <div class="w-stat"><b>∞</b><span>حافظهٔ بلندمدت</span></div>
           <div class="w-stat"><b>۱۰۲۴</b><span>ساخت عکس رایگان</span></div>
         </div>
@@ -152,7 +152,7 @@
             <svg class="ic"><use href="#i-gamepad"/></svg><b>بازی‌سازی</b><span>بازی کامل بساز و همین‌جا اجرایش کن</span>
           </button>
           <button class="cat-card" data-cat="voice">
-            <svg class="ic"><use href="#i-mic"/></svg><b>گفتگوی صوتی</b><span>جواب کوتاه؛ با صدای فارسی خوانده می‌شود</span>
+            <svg class="ic"><use href="#i-mic"/></svg><b>گفتگوی صوتی</b><span>جواب کوتاه؛ خوانده‌شدن با صدای ابری فارسی + دکمهٔ میکروفون زنده</span>
           </button>
           <button class="cat-card" data-cat="image">
             <svg class="ic"><use href="#i-image"/></svg><b>ساخت عکس</b><span>با یک جمله عکس بساز — رایگان، بدون کلید</span>
@@ -174,7 +174,7 @@
           <button class="suggestion"><svg class="ic ic-sm"><use href="#i-code"/></svg><span>یه صفحهٔ شخصی HTML مدرن با تم تیره برایم بساز</span></button>
           <button class="suggestion"><svg class="ic ic-sm"><use href="#i-cap"/></svg><span>فیزیک دهم — قانون اون را با مثال ساده توضیح بده</span></button>
         </div>
-        <p class="w-foot">ساخته‌شده با <svg class="ic ic-sm w-heart"><use href="#i-heart"/></svg> توسط <b>Sukot</b> · <span class="en" dir="ltr">v1.10.1</span></p>
+        <p class="w-foot">ساخته‌شده با <svg class="ic ic-sm w-heart"><use href="#i-heart"/></svg> توسط <b>Sukot</b> · <span class="en" dir="ltr">v1.14.0</span></p>
       </div>
     </div>
 
@@ -190,6 +190,9 @@
         </button>
         <button id="btn-image" class="web-btn" title="ساخت عکس: خاموش (کلیک برای روشن‌کردن — مثل ChatGPT عکس می‌سازد)" data-mode="off">
           <svg class="ic ic-lg"><use href="#i-image"/></svg>
+        </button>
+        <button id="btn-voice" class="web-btn btn-voice" title="گفتگوی صوتی زنده — مثل تماس با سوکوت؛ دایرهٔ رنگین گوش می‌دهد و جواب را با صدای ابری می‌گوید">
+          <svg class="ic ic-lg"><use href="#i-mic"/></svg>
         </button>
         <textarea id="input" rows="1" placeholder="از سوکوت بپرس… (Enter = ارسال · Shift+Enter = خط جدید)"></textarea>
         <button id="btn-send" class="send-btn" title="ارسال">
@@ -216,6 +219,7 @@
 
     <div class="tab-bar" id="set-tabs">
       <button type="button" class="tab-btn" data-tab="general"><svg class="ic ic-sm"><use href="#i-gear"/></svg><span>عمومی</span></button>
+      <button type="button" class="tab-btn" data-tab="voice"><svg class="ic ic-sm"><use href="#i-mic"/></svg><span>صدای ابری</span></button>
       <button type="button" class="tab-btn" data-tab="look"><svg class="ic ic-sm"><use href="#i-palette"/></svg><span>ظاهر و تم</span></button>
       <button type="button" class="tab-btn" data-tab="model"><svg class="ic ic-sm"><use href="#i-chip"/></svg><span>مدل هوش</span></button>
       <button type="button" class="tab-btn" data-tab="api"><svg class="ic ic-sm"><use href="#i-key"/></svg><span>مدیریت API</span></button>
@@ -244,24 +248,91 @@
         <div class="sub-title">صدا و گفتار</div>
         <label class="field check-field">
           <input type="checkbox" id="set-autospeak">
-          <span>خواندن خودکار پاسخ‌ها با صدا (مکالمهٔ صوتی)</span>
+          <span>خواندن خودکار پاسخ‌ها با صدای ابری</span>
+        </label>
+        <p class="hint" style="margin:8px 0 4px">سرعت صدا، کلید API صدا و تنظیمات گفتگوی صوتی همه در تب <b>«صدای ابری»</b> است.</p>
+      </div>
+    </div>
+
+    <!-- ——— ۱٫۵) صدای ابری و گفتگوی صوتی (v1.14.0) ——— -->
+    <div class="tab-page hidden" data-page="voice">
+      <div class="sub-box">
+        <div class="sub-title">API صدای ابری — صدای فارسی بدون نصب هیچ چیز روی گوشی</div>
+        <p class="hint" style="line-height:2">از نسخهٔ ۱٫۱۴ صدای پیش‌فرض دستگاه (مثل صدای سامسونگ) <b>کاملاً حذف شده</b>؛ همهٔ صداها از همین API ابری می‌آید. آدرس، کلید، مدل و صدا را می‌توانی عوض کنی.</p>
+        <label class="field">
+          <span>نوع API</span>
+          <select id="set-tts-kind">
+            <option value="ttsai">tts.ai — آسنکرون (پیش‌فرض سوکوت، صدای فارسی امیر)</option>
+            <option value="openai">سازگار با OpenAI — مسیر مستقیم /audio/speech</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>آدرس پایه (Base URL)</span>
+          <input type="text" id="set-tts-url" dir="ltr" placeholder="https://api.tts.ai/v1/" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>کلید API صدا</span>
+          <input type="password" id="set-tts-key" placeholder="sk-…" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>مدل صدا</span>
+          <input type="text" id="set-tts-model" dir="ltr" placeholder="piper" autocomplete="off">
         </label>
         <label class="field">
           <span>صدا (Voice)</span>
-          <select id="set-voice"></select>
-        </label>
-        <label class="field check-field">
-          <input type="checkbox" id="set-ttsfallback">
-          <span>اگر صدای فارسی نصب نبود، با صدای پیش‌فرض دستگاه بخوان</span>
+          <input type="text" id="set-tts-voice" dir="ltr" placeholder="fa_IR-amir-medium" autocomplete="off">
         </label>
         <label class="field">
           <span>سرعت خواندن صدا: <b id="rate-val">1</b></span>
-          <input type="range" id="set-rate" min="0.6" max="1.4" step="0.05" value="1">
+          <input type="range" id="set-rate" min="0.6" max="1.5" step="0.05" value="1">
         </label>
         <div class="modal-actions">
           <button id="btn-tts-test" class="btn btn-ghost"><svg class="ic"><use href="#i-speak"/></svg><span>تست صدا</span></button>
         </div>
-        <p class="hint" style="margin:8px 0 10px">اگر صدای فارسی نمی‌شنوی: اندروید ← موتور Google Speech Services را نصب کن؛ ویندوز ← تنظیمات گفتار ← افزودن صدای فارسی.</p>
+        <div id="tts-test-result" class="test-result"></div>
+        <p class="hint" style="margin:8px 0 0">اگر صدای ابری جواب نداد، اول «تست صدا» را بزن؛ پیام خطا دقیقاً می‌گوید کدام فیلد را باید درست کنی.</p>
+      </div>
+      <div class="sub-box">
+        <div class="sub-title">گفتگوی صوتی زنده — دکمهٔ میکروفون کنار نوشتار</div>
+        <label class="field">
+          <span>زبان تشخیص گفتار (میکروفون)</span>
+          <select id="set-vm-lang">
+            <option value="fa-IR">فارسی (fa-IR) — پیشنهادی</option>
+            <option value="en-US">انگلیسی (en-US)</option>
+            <option value="ar-SA">عربی (ar-SA)</option>
+            <option value="tr-TR">ترکی استانبولی (tr-TR)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>رنگ دایرهٔ گفتگوی صوتی</span>
+          <select id="set-vm-theme">
+            <option value="violet">بنفش سوکوت (پیش‌فرض)</option>
+            <option value="blue">آبی اقیانوسی</option>
+            <option value="green">سبز جنگلی</option>
+            <option value="orange">نارنجی غروب</option>
+            <option value="pink">صورتی رز</option>
+            <option value="rainbow">رنگین‌کمان (هر حالت یک رنگ)</option>
+          </select>
+          <span class="hint">در حالت رنگین‌کمان، هر حالت (گوش دادن / فکر / حرف زدن) رنگِ خودش را دارد و موقع حرف زدن هم مدام رنگ عوض می‌کند.</span>
+        </label>
+        <label class="field">
+          <span>ارسال خودکار بعد از سکوت</span>
+          <select id="set-vc-autosend">
+            <option value="0.8">سریع — بعد از ۰٫۸ ثانیه سکوت</option>
+            <option value="1.5">معمولی — بعد از ۱٫۵ ثانیه سکوت (پیشنهادی)</option>
+            <option value="2.5">آرام — بعد از ۲٫۵ ثانیه سکوت</option>
+            <option value="4">خیلی آرام — بعد از ۴ ثانیه سکوت</option>
+          </select>
+        </label>
+        <label class="field check-field">
+          <input type="checkbox" id="set-vc-loop">
+          <span>چرخهٔ گفت‌وشنید — بعد از هر پاسخ، خودکار دوباره گوش بده (مثل تماس زنده)</span>
+        </label>
+        <label class="field check-field">
+          <input type="checkbox" id="set-vc-transcript">
+          <span>نمایش زیرنویس زندهٔ گفتگو روی صفحهٔ صوتی</span>
+        </label>
+        <p class="hint" style="line-height:2;margin:8px 0 0">در صفحهٔ گفتگوی صوتی، دایرهٔ بزرگ رنگ عوض می‌کند: <b>سبز</b> = گوش می‌دهم، <b>بنفشِ چرخان</b> = فکر می‌کنم، <b>رنگین‌چرخان</b> = حرف می‌زنم. میکروفون از Google فارسی می‌شنود؛ اگر نبود، همان‌جا با کیبورد بنویس.</p>
       </div>
     </div>
 
@@ -327,6 +398,7 @@
         <span>ارائه‌دهندهٔ سرویس</span>
         <select id="set-provider">
           <option value="dahl">دال — مغز GLM 5.3 Flash + MiniMax + DeepSeek (کلید آماده سوکوت، تست‌شده ✓)</option>
+          <option value="freemodel">فری‌مدل — ۲۹ مدل فعال جهانی: GPT · Claude · Gemini · Grok · DeepSeek (کلید آماده ✓)</option>
           <option value="cloudflare">Cloudflare Workers AI — ۲۷ مدل + غول‌های بالای ۳۰۰B</option>
           <option value="pollinations">پولینیشن — رایگانِ کامل، بدون ثبت‌نام و بدون کلید ✓</option>
           <option value="groq">Groq — رایگان بدون کارت بانکی (سریع‌ترین سرعت)</option>
@@ -348,6 +420,19 @@
           <input type="password" id="set-dahl-key" placeholder="dahl_…" autocomplete="off">
         </label>
         <span class="hint">مدل‌های استدلالی دال قبل از جواب فکر می‌کنند («دارم عمیق فکر می‌کنم…») — اگر سهمِ فکر تمام شود، سوکوت خودکار با سهم بزرگ‌تر ادامه می‌دهد. این سرویس فعلاً عکس نمی‌بیند؛ برای عکس کلادفلر را انتخاب کن.</span>
+      </div>
+
+      <div class="sub-box hidden" id="box-fm-api">
+        <div class="sub-title">API فری‌مدل (freemodel.in — ۲۹ مدل فعال جهانی)</div>
+        <label class="field">
+          <span>آدرس پایه (Base URL)</span>
+          <input type="text" id="set-fm-base" dir="ltr" placeholder="https://freemodel.in/v1" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>کلید API (Key)</span>
+          <input type="password" id="set-fm-key" placeholder="fm_…" autocomplete="off">
+        </label>
+        <span class="hint">فقط ۲۹ مدلِ «فعال» کاتالوگ رسمی فری‌مدل در سوکوت اضافه شده (۱۷ مدلِ در حال تعمیر حذف شده‌اند). پنجرهٔ کانال‌متن، بینایی و قیمت هر مدل داخل انتخاب‌گر مدل نوشته شده است. سهمیهٔ این سرویس ماهانه است؛ اگر تمام شد سوکوت خودکار با دال جواب می‌دهد.</span>
       </div>
 
       <div class="sub-box" id="box-keys">
@@ -440,11 +525,11 @@
     <div class="tab-page hidden" data-page="about">
       <div class="sub-box" style="text-align:center">
         <p style="font-size:17px;font-weight:bold;margin:8px 0 2px">سوکوت AI</p>
-        <p class="en" dir="ltr" style="font-size:11px;color:var(--muted2)">v1.10.1 · Sukot AI Bot</p>
-        <p class="hint" style="line-height:2;margin-top:8px">ساخت عکس با هوش مصنوعی، استودیوی بازی‌سازی با اجرای زنده، ۵ دستیار تخصصی، آپلود فایل و عکس، جستجوی زندهٔ وب، قیمت لحظه‌ای ارز، صدای فارسی، حافظهٔ بلندمدت و سرویس‌های رایگان بدون کارت — روی اندروید، ویندوز و وب.</p>
+        <p class="en" dir="ltr" style="font-size:11px;color:var(--muted2)">v1.14.0 · Sukot AI Bot</p>
+        <p class="hint" style="line-height:2;margin-top:8px">گفتگوی صوتی زنده با دایرهٔ رنگین و صدای ابری فارسی، ۲۹ مدل فعال فری‌مدل (GPT/Claude/Gemini/Grok)، ساخت عکس با هوش مصنوعی، استودیوی بازی‌سازی با اجرای زنده، ۵ دستیار تخصصی، آپلود فایل و عکس، جستجوی زندهٔ وب، قیمت لحظه‌ای ارز، حافظهٔ بلندمدت و سرویس‌های رایگان بدون کارت — روی اندروید، ویندوز و وب.</p>
       </div>
       <div class="modal-actions" style="flex-direction:column;gap:10px">
-        <a id="btn-check-updates" class="btn btn-ghost" href="https://github.com/sukot5104-lang/sukot-ai-bot/releases/latest" target="_blank" rel="noopener"><svg class="ic"><use href="#i-download"/></svg><span>بررسی نسخهٔ جدید</span></a>
+        <a id="btn-check-updates" class="btn btn-ghost" href="https://github.com/fffddeer4/sukot-ai-bot/releases/latest" target="_blank" rel="noopener"><svg class="ic"><use href="#i-download"/></svg><span>بررسی نسخهٔ جدید</span></a>
         <a class="btn btn-ghost" href="https://t.me/SUKOT1344" target="_blank" rel="noopener"><svg class="ic"><use href="#i-telegram"/></svg><span>کانال تلگرام سوکوت</span></a>
       </div>
       <p class="hint" style="text-align:center;margin-top:10px">طراحی و ساخت: <b style="color:var(--pink)">Sukot</b></p>
@@ -573,8 +658,8 @@
       <img class="about-hero" src="img/hero.jpg" alt="سوکوت AI">
     </div>
     <h2 class="about-name">سوکوت AI</h2>
-    <div class="about-ver" dir="ltr">v1.10.1</div>
-    <p class="about-desc">ساخت عکس مثل ChatGPT (رایگان، بدون کلید)، استودیوی بازی‌سازی با اجرای زندهٔ بازی داخل خود اپ، سرویس‌های رایگان بدون کارت (پولینیشن، Groq، Gemini)، آپلود فایل و عکس، غول‌های بالای ۳۰۰B، ابزارهای عامل، جستجوی زندهٔ وب، قیمت لحظه‌ای ارز، ۵ دستیار تخصصی، صدای فارسی و حافظهٔ بلندمدت — روی اندروید، ویندوز و وب.</p>
+    <div class="about-ver" dir="ltr">v1.14.0</div>
+    <p class="about-desc">گفتگوی صوتی زنده با دایرهٔ رنگین (مثل ChatGPT) با صدای ابری فارسی، ۲۹ مدل فعال فری‌مدل (GPT · Claude · Gemini · Grok)، ساخت عکس مثل ChatGPT (رایگان، بدون کلید)، استودیوی بازی‌سازی با اجرای زندهٔ بازی داخل خود اپ، سرویس‌های رایگان بدون کارت (پولینیشن، Groq، Gemini)، آپلود فایل و عکس، غول‌های بالای ۳۰۰B، ابزارهای عامل، جستجوی زندهٔ وب، قیمت لحظه‌ای ارز، ۵ دستیار تخصصی و حافظهٔ بلندمدت — روی اندروید، ویندوز و وب.</p>
     <a class="about-tg" href="https://t.me/SUKOT1344" target="_blank" rel="noopener">
       <svg class="ic ic-sm"><use href="#i-telegram"/></svg><span>کانال تلگرام: <b dir="ltr">@SUKOT1344</b></span>
     </a>
@@ -582,7 +667,7 @@
       <svg class="ic ic-sm"><use href="#i-crown"/></svg>
       <span>طراحی و ساخت: <b>Sukot</b></span>
     </div>
-    <p class="about-tech">قدرت‌گرفته از <span class="en">Dahl (Gonka) · Cloudflare · Pollinations</span></p>
+    <p class="about-tech">قدرت‌گرفته از <span class="en">FreeModel · Dahl (Gonka) · tts.ai · Cloudflare · Pollinations</span></p>
   </div>
 </div>
 
@@ -629,6 +714,34 @@
 </div>
 
 <div id="toast" class="toast hidden"></div>
+
+<!-- ===== Voice Live Conversation (v1.14.0) — دایرهٔ رنگین گفتگوی صوتی ===== -->
+<div id="voice-backdrop" class="voice-backdrop hidden">
+  <div class="vc-top">
+    <span class="vc-title"><svg class="ic ic-sm"><use href="#i-mic"/></svg><span>گفتگوی صوتی زنده</span><i class="dot dot-off" id="vc-live-dot"></i></span>
+    <button id="btn-vc-close" class="icon-btn"><svg class="ic"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="vc-stage">
+    <div id="vc-orb" class="vc-orb" data-state="idle"><i class="r1"></i><i class="r2"></i><i class="r3"></i></div>
+    <p id="vc-state">آمادهٔ گفتگو…</p>
+    <div id="vc-unsupported" class="vc-unsup hidden">
+      <span id="vc-unsupported-txt">این دستگاه تشخیص گفتار ندارد — با کیبورد بنویس؛ جواب با صدای ابری خوانده می‌شود.</span>
+    </div>
+  </div>
+  <div class="vc-transcript">
+    <div class="vc-line user"><b>تو:</b> <span id="vc-heard"></span></div>
+    <div class="vc-line bot" id="vc-reply"><span class="vc-hint">پاسخ سوکوت همین‌جا می‌آید…</span></div>
+  </div>
+  <div class="vc-type-row">
+    <input type="text" id="vc-type" placeholder="یا با کیبورد بنویس…" autocomplete="off">
+    <button id="btn-vc-send" class="btn btn-primary btn-sm"><svg class="ic"><use href="#i-send"/></svg><span>ارسال</span></button>
+  </div>
+  <div class="vc-controls">
+    <button id="btn-vc-stop" class="vc-btn2" title="ساکت! قطع صدا"><svg class="ic"><use href="#i-stop"/></svg></button>
+    <button id="btn-vc-mic" class="vc-mic" title="شروع/توقف گوش دادن"><svg class="ic"><use href="#i-mic"/></svg></button>
+    <button id="btn-vc-kb" class="vc-btn2" title="تمرکز روی نوشتن" onclick="document.getElementById('vc-type').focus()"><svg class="ic"><use href="#i-edit"/></svg></button>
+  </div>
+</div>
 
 <script src="app.js"></script>
 </body>

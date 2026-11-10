@@ -1,16 +1,24 @@
 /* ============================================================
-   سوکوت AI (Sukot AI) v1.10.1 — Persian AI chatbot
-   powered by Dahl(Gonka) · Cloudflare · Pollinations · Groq · Gemini
+   سوکوت AI (Sukot AI) v1.14.0 — Persian AI chatbot
+   powered by FreeModel · Dahl(Gonka) · Cloudflare · Pollinations · tts.ai
+
+   v1.14.0 highlights
+   - سرویس جدید «فری‌مدل» (freemodel.in) با کلید آمادهٔ شخصی — فقط ۲۹ مدلِ «فعال»
+     کاتالوگ رسمی (۱۷ مدلِ در حال تعمیر حذف شدند) + کارت جزئیات هر مدل (سازنده،
+     پنجرهٔ کانال‌متن، بینایی، قیمت) + زنجیرهٔ فالبک: فری‌مدل ← دال ← پولینیشن
+   - بخش مخصوص «API صدای ابری» در تنظیمات: آدرس، کلید، مدل، صدا و سرعت همه قابل تنظیم
+     + دکمهٔ تست صدا + دو حالت API (tts.ai آسنکرون / سازگار با OpenAI)
+   - صدای پیش‌فرض سامسونگ/دستگاه کاملاً حذف شد — صدا فقط با API ابری
+     (tts.ai — صدای فارسی امیر) پخش می‌شود؛ بدون نصب هیچ صدایی روی گوشی
+   - گفتگوی صوتی زنده مثل ChatGPT: دایرهٔ بزرگِ رنگین‌چرخان که با حالت‌ها عوض می‌شود
+     (گوش دادن/فکر کردن/حرف زدن) + تشخیص گفتار فارسی + ارسال خودکار بعد از سکوت
+     + چرخهٔ خودکار گفت‌وشنید + زیرنویس زندهٔ فارسی + تنظیمات مخصوص گفتگو
+   - سرعت: نظرسنجی سریع‌تر صدا (اولین تکهٔ کوچک‌تر + پیش‌واکشی)، شمارندهٔ ثانیه
+     روی «در حال نوشتن»، و چیپ «با مغز …» زیر هر پاسخ تا مدلِ فعال همیشه دیده شود
+   - رفع باگ «تغییر مدل اعمال نمی‌شود»: انتخاب مدل در گفتگو حالا سراسری قفل و
+     تست‌شده است — چیپ مغزِ هر پاسخ نشان می‌دهد دقیقاً کدام مدل جواب داده
 
    v1.10.1 highlights
-   - رفع ارور «محدودیت تعداد درخواست» دال: خطای جدید model_concurrency (شلوغی لحظه‌ای مغز
-     روی پلن رایگان) شناسایی می‌شود → سوکوت خودکار با مغزِ آزادِ همان سرویس (MiniMax/DeepSeek)
-     ادامه می‌دهد؛ اگر هر ۳ مغز شلوغ باشند، سوییچ خودکار به سرویس رایگان پولینیشن
-   - پیام صادقانهٔ فارسی: «مغز GLM همین لحظه شلوغ بود؛ این پاسخ با مغز جایگزین … داده شد»
-   - چراغ وضعیت زنده و «تست اتصال» هم با مغز جایگزین سبز می‌شوند
-   - پیام خطای 429 عمومی دقیق‌تر شد (دیگر «پایان اعتبار روزانه» بی‌دلیل گفته نمی‌شود)
-
-   v1.10.0 highlights
    - حذف کامل دو سرویس TokenRouter و OpenRouter از فهرست پلن‌ها (به خواست کاربر)
      — مهاجرت خودکارِ کاربرانی که روی این دو بودند به «دال» با کلید آماده
    - رفع باگ «فقط ۳ مدل» : وقتی پلن را عوض می‌کنی، همین لحظه ذخیره و اعمال می‌شود
@@ -33,7 +41,7 @@
 'use strict';
 
 /* ---------- constants ---------- */
-const APP_VERSION = '1.10.1';
+const APP_VERSION = '1.14.0';
 const CREATOR = 'Sukot';
 const DEFAULT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 const LEGACY_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
@@ -48,6 +56,88 @@ const DAHL_DEFAULT_MODEL = 'zai-org/GLM-5.3-Flash';
    با سهم کم، فکر تمام می‌شود و هیچ جوابی نمی‌آید (تست واقعی: ۱۰۰ توکن = فقط فکر)
    → حداقل سهم برای سرویس دال بالاست تا فکر + جواب هر دو جا شوند */
 const DAHL_MIN_TOKENS = 2600;
+
+/* — سرویس جدید «فری‌مدل» (freemodel.in): یک کلید، همهٔ مدل‌های بزرگ دنیا —
+   فقط ۲۹ مدلِ «فعال» کاتالوگ رسمی (https://freemodel.in/models) اضافه شده؛
+   ۱۷ مدلِ دیگرِ کاتالوگ در حالت تعمیر (Maintenance) هستند و عمداً حذف شدند.
+   بازبینی کاتالوگ: ۲۰۲۶-۱۱-۱۱ */
+const FM_DEFAULT_BASE = 'https://freemodel.in/v1';
+const FM_DEFAULT_KEY = 'fm_8732a78800575928db5755ce3a6378d0e3394d0b8a0b18f2';
+const FM_DEFAULT_MODEL = 'glm-5.3-flash';
+const FM_DEFAULT_VISION = 'gemini-3.7-flash';
+const FM_MODELS = {
+  'deepseek-v4.1-flash': 'DeepSeek V4.1 Flash — استدلالِ سریع نسل جدید · بینایی · ۱M توکن (غولِ اقتصادی)',
+  'deepseek-v4-flash-0731': 'DeepSeek V4 Flash (0731) — استدلال و کد · ۳۰۴B · ۱M توکن',
+  'glm-5.3-flash': 'GLM 5.3 Flash — مغز آشنای سوکوت از Zhipu · استدلال و ابزار · ۱M توکن',
+  'qwen3.8-27b': 'Qwen 3.8 27B — جمع‌وجور و دقیق از Alibaba · ابزار · ۲۵۶K توکن',
+  'seed-2.1-turbo': 'Seed 2.1 Turbo — توربوی بایت‌دنس · بینایی · ۲۵۶K توکن',
+  'gemini-3.7-flash': 'Gemini 3.7 Flash — جدیدترین فلشِ گوگل · بینایی · ۱M توکن (پیشنهادی برای عکس)',
+  'qwen3.7-max': 'Qwen 3.7 Max — پرچمدار علی‌بابا · بینایی · ۱M توکن',
+  'matilda-cerulean-i': 'Matilda Cerulean I — موتور کدِ فوق‌کم‌تأخیر · ابزار · ۲۵۰K توکن',
+  'deepseek-v4-pro-max': 'DeepSeek V4 Pro Max — غول ۱٫۶T پارامتری · استدلال ماکزیمم · ۱M توکن',
+  'gemini-3.6-flash': 'Gemini 3.6 Flash — فلشِ سریع گوگل · بینایی · ۱M توکن',
+  'grok-4.6': 'Grok 4.6 — جدیدترین مدل xAI · بینایی · ۴۸۸K توکن',
+  'gpt-5.6-terra': 'GPT-5.6 Terra — رده‌بالای اوپن‌ای‌آی · بینایی · ۱M توکن',
+  'gemini-3.1-pro': 'Gemini 3.1 Pro — پروِ گوگل · بینایی · ۱M توکن',
+  'claude-sonnet-5-5': 'Claude Sonnet 5.5 — عامل ترکیبیِ سریع آنتروپیک · بینایی · ۴۸۸K توکن',
+  'kimi-k3': 'Kimi K3 — پرچمدار متن‌باز Moonshot · ۲٫۸T پارامتر · بینایی · ۱M توکن',
+  'codex-auto-review': 'Codex Auto Review — بازبین خودکار کد و تضمین کیفیت · ۲۵۰K توکن',
+  'claude-opus-4.6': 'Claude Opus 4.6 — استدلال مطمئن آنتروپیک · بینایی · ۱M توکن',
+  'claude-opus-4.7': 'Claude Opus 4.7 — کدنویسی و استدلال قوی · بینایی · ۱M توکن',
+  'claude-opus-4.8': 'Claude Opus 4.8 — نسل ۴٫۸ اوپوس · بینایی · ۱M توکن',
+  'claude-opus-5': 'Claude Opus 5 — تواناترین مدل آنتروپیک · بینایی · ۱M توکن',
+  'gpt-5.5': 'GPT-5.5 — استدلال و کدِ قوی اوپن‌ای‌آی · بینایی · ۱M توکن',
+  'gpt-5.5-pro': 'GPT-5.5 Pro — نسخهٔ حرفه‌ای GPT-5.5 · بینایی · ۱M توکن',
+  'gpt-5.6-sol': 'GPT-5.6 Sol — پرچمدار اوپن‌ای‌آی · بینایی · ۱M توکن',
+  'claude-opus-4-5': 'Claude Opus 4.5 — تحلیل علمی و ارزیابی فنی عمیق · بینایی · ۴۸۸K توکن',
+  'claude-opus-5-5': 'Claude Opus 5.5 — پرچمدار استدلال و کدِ آنتروپیک · بینایی · ۱M توکن',
+  'gpt-6-astra': 'GPT-6 Astra — عامل خودکار نسل ۶ با دید عمیق · بینایی · ۱M توکن',
+  'gpt-6.1-sol': 'GPT-6.1 Sol — سیستم‌های خودکار و منطق چندوجهی · بینایی · ۴۸۸K توکن',
+  'claude-fable-5': 'Claude Fable 5 — کدنویسی و استدلال درجه‌یک (رکورددار Code Arena) · بینایی · ۱M توکن',
+  'claude-mythos-preview': 'Claude Mythos Preview — پیش‌نمایش نسل بعد آنتروپیک · بینایی · ۱M توکن'
+};
+/* متادیتای انتخاب‌گر: سازنده + کپ‌سول‌ها + قیمت رسمی کاتالوگ (دلار به‌ازای هر ۱M توکن) */
+const FM_META = {
+  'deepseek-v4.1-flash': { by: 'DeepSeek', ctx: '۱M', price: '$۰٫۰۵۶', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'deepseek-v4-flash-0731': { by: 'DeepSeek', ctx: '۱M', price: '$۰٫۱۱۵', caps: ['استدلال', 'ابزار'] },
+  'glm-5.3-flash': { by: 'Zhipu', ctx: '۱M', price: '$۰٫۰۸', caps: ['استدلال', 'ابزار'] },
+  'qwen3.8-27b': { by: 'Alibaba', ctx: '۲۵۶K', price: '$۰٫۵۷۵', caps: ['استدلال', 'ابزار'] },
+  'seed-2.1-turbo': { by: 'ByteDance', ctx: '۲۵۶K', price: '$۰٫۹۲', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'gemini-3.7-flash': { by: 'Google', ctx: '۱M', price: '$۱٫۲۴', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'qwen3.7-max': { by: 'Alibaba', ctx: '۱M', price: '$۱٫۷۶', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'matilda-cerulean-i': { by: 'Matilda', ctx: '۲۵۰K', price: '$۱٫۰۰', caps: ['استدلال', 'ابزار', 'کدِ سریع'] },
+  'deepseek-v4-pro-max': { by: 'DeepSeek', ctx: '۱M', price: '$۲٫۰۵', caps: ['استدلال', 'ابزار'] },
+  'gemini-3.6-flash': { by: 'Google', ctx: '۱M', price: '$۲٫۵۰', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'grok-4.6': { by: 'xAI', ctx: '۴۸۸K', price: '$۲٫۸۱', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'gpt-5.6-terra': { by: 'OpenAI', ctx: '۱M', price: '$۳٫۵۸', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'gemini-3.1-pro': { by: 'Google', ctx: '۱M', price: '$۴٫۴۷', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'claude-sonnet-5-5': { by: 'Anthropic', ctx: '۴۸۸K', price: '$۳٫۰۰', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'kimi-k3': { by: 'Moonshot', ctx: '۱M', price: '$۴٫۹۸', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'codex-auto-review': { by: 'Codex', ctx: '۲۵۰K', price: '$۲٫۰۰', caps: ['استدلال', 'ابزار', 'بازبینی کد'] },
+  'claude-opus-4.6': { by: 'Anthropic', ctx: '۱M', price: '$۸٫۳۰', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'claude-opus-4.7': { by: 'Anthropic', ctx: '۱M', price: '$۸٫۳۰', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'claude-opus-4.8': { by: 'Anthropic', ctx: '۱M', price: '$۸٫۳۰', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'claude-opus-5': { by: 'Anthropic', ctx: '۱M', price: '$۸٫۳۰', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'gpt-5.5': { by: 'OpenAI', ctx: '۱M', price: '$۸٫۹۵', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'gpt-5.5-pro': { by: 'OpenAI', ctx: '۱M', price: '$۸٫۹۵', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'gpt-5.6-sol': { by: 'OpenAI', ctx: '۱M', price: '$۸٫۹۵', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'claude-opus-4-5': { by: 'Anthropic', ctx: '۴۸۸K', price: '$۸٫۰۰', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'claude-opus-5-5': { by: 'Anthropic', ctx: '۱M', price: '$۸٫۳۰', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'gpt-6-astra': { by: 'OpenAI', ctx: '۱M', price: '$۸٫۹۵', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'gpt-6.1-sol': { by: 'OpenAI', ctx: '۴۸۸K', price: '$۸٫۹۵', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'claude-fable-5': { by: 'Anthropic', ctx: '۱M', price: '$۱۵٫۰۰', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'claude-mythos-preview': { by: 'Anthropic', ctx: '۱M', price: '$۸٫۳۰', caps: ['استدلال', 'بینایی', 'ابزار'] }
+};
+/* مدل‌های بینای فری‌مدل (طبق کاتالوگ رسمی) — برای سوییچ خودکار روی عکس پیوست */
+const FM_VISION = ['deepseek-v4.1-flash', 'seed-2.1-turbo', 'gemini-3.7-flash', 'qwen3.7-max', 'gemini-3.6-flash', 'grok-4.6', 'gpt-5.6-terra', 'gemini-3.1-pro', 'claude-sonnet-5-5', 'kimi-k3', 'claude-opus-4.6', 'claude-opus-4.7', 'claude-opus-4.8', 'claude-opus-5', 'gpt-5.5', 'gpt-5.5-pro', 'gpt-5.6-sol', 'claude-opus-4-5', 'claude-opus-5-5', 'gpt-6-astra', 'gpt-6.1-sol', 'claude-fable-5', 'claude-mythos-preview'];
+/* گروه‌بندی انتخاب‌گر فری‌مدل — ۲۹ مدل فعال، دقیقاً یک‌بار */
+const FM_GROUPS = [
+  { title: '⚡ سریع و اقتصادی — برای گفتگوی روزمره', ids: ['deepseek-v4.1-flash', 'glm-5.3-flash', 'qwen3.8-27b', 'deepseek-v4-flash-0731', 'seed-2.1-turbo'] },
+  { title: '🌐 گوگل و xAI — جستجوگرهای هوشمند', ids: ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.1-pro', 'grok-4.6'] },
+  { title: '🟢 خانوادهٔ GPT اوپن‌ای‌آی', ids: ['gpt-5.6-terra', 'gpt-5.6-sol', 'gpt-5.5', 'gpt-5.5-pro', 'gpt-6-astra', 'gpt-6.1-sol'] },
+  { title: '🟣 خانوادهٔ Claude آنتروپیک', ids: ['claude-sonnet-5-5', 'claude-opus-4-5', 'claude-opus-4.6', 'claude-opus-4.7', 'claude-opus-4.8', 'claude-opus-5', 'claude-opus-5-5', 'claude-fable-5', 'claude-mythos-preview'] },
+  { title: '🔬 غول‌های متن‌باز و ابزارهای ویژه', ids: ['kimi-k3', 'qwen3.7-max', 'deepseek-v4-pro-max', 'matilda-cerulean-i', 'codex-auto-review'] }
+];
 
 const LS_SET = 'sukot_ai_settings_v1';
 const LS_CHAT = 'sukot_ai_chats_v1';
@@ -211,7 +301,7 @@ const MODEL_NAMES = {
   '@cf/ibm-granite/granite-4.0-h-micro': 'Granite 4.0 Micro — IBM'
 };
 
-/* مدل‌های دارای بینایی — تست‌شده با درخواست تصویر واقعی روی حساب کاربر */
+/* مدل‌های دارای بینایی — کلادفلر (تست‌شده) + فری‌مدل (طبق کاتالوگ رسمی) */
 const VISION_MODELS = [
   '@cf/meta/llama-4-scout-17b-16e-instruct',
   '@cf/qwen/qwen3.8-27b',
@@ -221,7 +311,7 @@ const VISION_MODELS = [
   '@cf/deepseek-ai/deepseek-v4.1-flash-1017'
 ];
 const DEFAULT_VISION_MODEL = '@cf/meta/llama-4-scout-17b-16e-instruct';
-function isVision(id) { return VISION_MODELS.indexOf(id) !== -1; }
+function isVision(id) { return VISION_MODELS.indexOf(id) !== -1 || FM_VISION.indexOf(id) !== -1; }
 
 /* مدل‌های مردهٔ قدیمی → جایگزین سالم (مهاجرت خودکار تنظیمات ذخیره‌شده) */
 const DEAD_MODELS = {
@@ -233,7 +323,7 @@ const DEAD_MODELS = {
   '@cf/meta/llama-3.2-11b-vision-instruct': '@cf/qwen/qwen3.8-27b'
 };
 /* الگوهای خطای سطح مدل — یعنی خود مدل در دسترس نیست و باید فالبک کرد */
-const MODEL_ERR_RE = /deprecated|No such model|not allowed to access|not available on the Workers Free plan|Model Agreement/i;
+const MODEL_ERR_RE = /deprecated|No such model|model_not_found|invalid model|does not exist|not allowed to access|not available on the Workers Free plan|Model Agreement/i;
 /* مدل پایدار جایگزین برای فالبک خودکار */
 function fallbackModel(dead) {
   if (DEAD_MODELS[dead]) return DEAD_MODELS[dead];
@@ -241,7 +331,9 @@ function fallbackModel(dead) {
   return '@cf/openai/gpt-oss-120b';
 }
 
-/* ---------- پروایدرها: دال / کلادفلر / رایگان‌ها / دلخواه ---------- */
+/* ---------- پروایدرها: دال / فری‌مدل / کلادفلر / رایگان‌ها / دلخواه ---------- */
+/* نام کوتاه برای چیپ «با مغز …» زیر هر پاسخ */
+const PROV_SHORT = { dahl: 'دال', freemodel: 'فری‌مدل', cloudflare: 'کلادفلر', pollinations: 'پولینیشن', groq: 'Groq', gemini: 'Gemini', zai: 'Z.ai', custom: 'سرویس دلخواه' };
 const PROVIDERS = {
   dahl: {
     name: 'دال (GLM 5.3 Flash)',
@@ -312,6 +404,18 @@ const PROVIDERS = {
       'glm-4.5-flash': 'GLM-4.5-Flash — سریع و اقتصادی'
     }
   },
+  freemodel: {
+    name: 'فری‌مدل — ۲۹ مدل فعال جهانی (GPT/Claude/Gemini/Grok…)',
+    tokenUrl: 'کلید شخصی تو از قبل تنظیم شده — در باکس «API فری‌مدل» قابل تغییر است',
+    needsAccount: false,
+    needsToken: false, /* کلید در fmToken جدا ذخیره می‌شود و از قبل پر است */
+    endpoint: (s) => {
+      let b = (s.fmBase || FM_DEFAULT_BASE).trim().replace(/\/+$/, '');
+      if (!/chat\/completions$/.test(b)) b += /\/v\d+$/.test(b) ? '/chat/completions' : '/v1/chat/completions';
+      return b;
+    },
+    models: FM_MODELS
+  },
   custom: {
     name: 'سرویس دلخواه (سازگار با OpenAI)',
     tokenUrl: 'آدرس API را در فیلد پایین وارد کنید',
@@ -328,14 +432,16 @@ function loadSettings() {
   const out = Object.assign({
     token: '', account: '', base: '',
     dahlToken: DAHL_DEFAULT_KEY, dahlBase: DAHL_DEFAULT_BASE,
+    fmToken: FM_DEFAULT_KEY, fmBase: FM_DEFAULT_BASE,
     provider: 'dahl',
     model: DEFAULT_MODEL, modelCustom: '',
     sys: '', temp: 0.7, style: 'detailed',
     cat: 'general', webSearch: 'auto', autoSpeak: false, speakRate: 1,
-    agentTools: true, voice: '', ttsFallback: true,
+    agentTools: true,
     imageMode: false, imageEngine: 'auto', imgStyle: 'none',
     theme: 'night', fontScale: 1, anim: true,
-    gameBigRun: true, runErrors: true
+    gameBigRun: true, runErrors: true,
+    vcAutoSend: 1.5, vcLoop: true, vcTranscript: true, vmTheme: 'violet', vmLang: 'fa-IR'
   }, s);
   let migrated = false;
   /* v1.10.0: مهاجرت از سرویس‌های حذف‌شده (TokenRouter / OpenRouter) به «دال» با کلید آماده */
@@ -356,6 +462,26 @@ function loadSettings() {
   }
   if (!out.dahlToken) out.dahlToken = DAHL_DEFAULT_KEY;
   if (!out.dahlBase) out.dahlBase = DAHL_DEFAULT_BASE;
+  if (!out.fmToken) out.fmToken = FM_DEFAULT_KEY;
+  if (!out.fmBase) out.fmBase = FM_DEFAULT_BASE;
+  /* v1.14.0: تنظیمات API صدای ابری — پیش‌فرض tts.ai (صدای فارسی امیر) */
+  if (!out.ttsApi || typeof out.ttsApi !== 'object') {
+    out.ttsApi = { kind: 'ttsai', url: TTS_DEF.url, key: TTS_DEF.key, model: TTS_DEF.model, voice: TTS_DEF.voice };
+  } else {
+    out.ttsApi.kind = out.ttsApi.kind === 'openai' ? 'openai' : 'ttsai';
+    if (!out.ttsApi.url) out.ttsApi.url = TTS_DEF.url;
+    if (!out.ttsApi.key) out.ttsApi.key = TTS_DEF.key;
+    if (!out.ttsApi.model) out.ttsApi.model = TTS_DEF.model;
+    if (!out.ttsApi.voice) out.ttsApi.voice = TTS_DEF.voice;
+  }
+  /* v1.14.0: تنظیمات گفتگوی صوتی */
+  out.vcAutoSend = Math.min(4, Math.max(0.5, Number(out.vcAutoSend) || 1.5));
+  out.vcLoop = out.vcLoop !== false;
+  out.vcTranscript = out.vcTranscript !== false;
+  if (!['violet', 'blue', 'green', 'orange', 'pink', 'rainbow'].includes(out.vmTheme)) out.vmTheme = 'violet';
+  if (!['fa-IR', 'en-US', 'ar-SA', 'tr-TR'].includes(out.vmLang)) out.vmLang = 'fa-IR';
+  /* صدای پیش‌فرض دستگاه (سامسونگ) حذف شد — کلیدهای قدیمی بی‌اثر می‌شوند */
+  delete out.voice; delete out.ttsFallback;
   if (out.model === LEGACY_MODEL && !out.modelPicked) { out.model = DEFAULT_MODEL; }
   /* مهاجرت خودکار مدل‌های مردهٔ ذخیره‌شده به جایگزین سالم */
   if (out.model && DEAD_MODELS[out.model]) { out.model = DEAD_MODELS[out.model]; }
@@ -374,7 +500,7 @@ function loadSettings() {
   out.imageMode = !!out.imageMode;
   out.speakRate = Math.min(1.5, Math.max(0.6, Number(out.speakRate) || 1));
   out.agentTools = out.agentTools !== false;
-  out.ttsFallback = out.ttsFallback !== false;
+  /* v1.14.0: صدای دستگاه/فالبک بومی حذف شد — فقط صدای ابری */
   /* v1.10.0: اگر مهاجرتی انجام شد، همین اول کار ذخیره شود تا بعد از بستن برنامه هم بماند */
   if (migrated) saveSettings(out);
   return out;
@@ -659,21 +785,19 @@ function friendlyError(status, bodyText) {
     if (/not available on the Workers Free plan/i.test(msg)) {
       return '[model-unavailable] این مدل فقط روی پلن پولی کلادفلر فعال است — سوکوت خودکار با مدل پایدار ادامه می‌دهد (یا در تنظیمات مدل رایگان دیگری انتخاب کن).';
     }
-    if (/deprecated|No such model/i.test(msg)) {
+    if (/deprecated|No such model|model_not_found/i.test(msg)) {
       return '[model-unavailable] این مدل بازنشسته یا حذف شده است — سوکوت خودکار با مدل پایدار جایگزین ادامه می‌دهد.';
     }
     return '[model-unavailable] این مدل روی این حساب در دسترس نیست (نیاز به تأیید لایسنس در پنل کلادفلر دارد) — سوکوت خودکار با مدل پایدار ادامه می‌دهد.';
   }
 
   /* موجودی/دسترسی سرویس → سوییچ خودکار به سرویس بعدی (پولینیشن رایگان) */
-  if (/insufficient_user_quota|gift balance|remaining eligible quota/i.test(msg) || /insufficient/i.test(String(code))) {
-    return '[provider-quota] موجودی این سرویس برای این مدل تمام شده است — سوکوت خودکار به سرویس رایگان سوییچ می‌کند.';
-  }
-  if (/error code: 1010/i.test(msg)) {
-    return '[provider-quota] این سرویس درخواست را مسدود کرد (پشتیبان ربات‌گیر) — سوکوت خودکار به سرویس رایگان سوییچ می‌کند.';
-  }
-  if (/no access to model|This token has no access/i.test(msg)) {
-    return '[provider-quota] کلید فعلی به این مدل دسترسی ندارد — سوکوت خودکار به سرویس رایگان سوییچ می‌کند.';
+  if (/insufficient_user_quota|gift balance|remaining eligible quota/i.test(msg) || /insufficient/i.test(String(code))
+    || /quota exceeded|usage limit|token limit exceeded|monthly (token|usage)/i.test(msg)
+    || /invalid api key|unauthorized|missing bearer/i.test(msg)
+    || /no access to model|This token has no access/i.test(msg)
+    || /error code: 1010/i.test(msg)) {
+    return '[provider-quota] کلید یا موجودی این سرویس پاسخ نداد — سوکوت خودکار به سرویس بعدی سوییچ می‌کند.';
   }
 
   if (code === 9109 || /location/i.test(msg)) {
@@ -1030,14 +1154,16 @@ let activeProvider = null; /* هنگام فالبک سرویس، سرویسِ ف
 function curProvider() { return activeProvider || settings.provider || 'cloudflare'; }
 function providerChain() {
   const chain = [settings.provider];
+  if (settings.provider === 'freemodel') chain.push('dahl'); /* فری‌مدل ← دال ← رایگان */
   if (settings.provider !== 'pollinations') chain.push('pollinations'); /* نگهبان رایگانِ آخر */
   return chain;
 }
 function apiUrl(p) {
   const s = settings;
   const pid = p || curProvider();
-  /* سرویس دال (اصلی) آدرس مخصوص خودش را دارد */
+  /* سرویس دال و فری‌مدل آدرس مخصوص خودشان را دارند (override دستی اثر نمی‌گذارد) */
   if (pid === 'dahl') return (PROVIDERS.dahl.endpoint)(s);
+  if (pid === 'freemodel') return (PROVIDERS.freemodel.endpoint)(s);
   /* override دستی همیشه اولویت دارد (برای تست/سرویس دلخواه) */
   if (s.base && s.base.trim()) {
     let b = s.base.trim().replace(/\/+$/, '');
@@ -1056,6 +1182,7 @@ function apiHeaders(p) {
   const h = { 'Content-Type': 'application/json' };
   /* پولینیشن بدون کلید کار می‌کند — هدر احراز فقط وقتی توکن هست */
   const tok = pid === 'dahl' ? (settings.dahlToken || DAHL_DEFAULT_KEY).trim()
+    : pid === 'freemodel' ? (settings.fmToken || FM_DEFAULT_KEY).trim()
     : (settings.token || '').trim();
   if (tok) h['Authorization'] = 'Bearer ' + tok;
   return h;
@@ -1066,6 +1193,10 @@ function chosenModel(p) {
     const ids = Object.keys(PROVIDERS.dahl.models);
     return ids.indexOf(settings.model) !== -1 ? settings.model : DAHL_DEFAULT_MODEL;
   }
+  if (pid === 'freemodel') {
+    const ids = Object.keys(PROVIDERS.freemodel.models);
+    return ids.indexOf(settings.model) !== -1 ? settings.model : FM_DEFAULT_MODEL;
+  }
   if (pid === 'pollinations') return 'openai-fast';
   return settings.model === 'custom' ? (settings.modelCustom || '').trim() : settings.model;
 }
@@ -1073,6 +1204,7 @@ function prettyModel(id) {
   if (!id) return '—';
   if (MODEL_NAMES[id]) return MODEL_NAMES[id];
   if (PROVIDERS.dahl.models[id]) return PROVIDERS.dahl.models[id].split('—')[0].trim();
+  if (PROVIDERS.freemodel.models[id]) return PROVIDERS.freemodel.models[id].split('—')[0].trim();
   if (id === 'openai-fast') return 'مغز رایگان پولینیشن';
   return id.length > 26 ? id.slice(0, 26) + '…' : id;
 }
@@ -1271,45 +1403,99 @@ function copyText(txt, onDone) {
   } else legacy();
 }
 
-/* ---------- TTS: خواندن پاسخ با صدا ---------- */
-const TTS_NATIVE = () => ENV === 'android' && typeof AndroidAI !== 'undefined' && !!AndroidAI.speak;
-/* آیا موتور گفتار دستگاه صدا فارسی دارد؟ (پل بومی اندروید) */
-function nativeFaTts() {
-  try { return TTS_NATIVE() && typeof AndroidAI.hasFaTts === 'function' && AndroidAI.hasFaTts() === true; }
-  catch (e) { return false; }
+/* ============================================================
+   v1.14.0 — TTS ابری: خواندن پاسخ «فقط» با API صدا
+   صدای پیش‌فرض سامسونگ/دستگاه کاملاً حذف شد — هیچ صدایی از موتور گوشی
+   پخش نمی‌شود؛ همهٔ صدا از همان API قابل‌تنظیمِ بخش «صدای ابری» می‌آید.
+   پیش‌فرض: tts.ai (مدل piper، صدای فارسی fa_IR-amir-medium، فرمت wav)
+   ============================================================ */
+const TTS_DEF = { kind: 'ttsai', url: 'https://api.tts.ai/v1/', key: 'sk-tts-604767279a9e4cc2a3cfd290aee8c5f1', model: 'piper', voice: 'fa_IR-amir-medium' };
+function ttsCfg() {
+  const a = settings.ttsApi || {};
+  return {
+    kind: a.kind === 'openai' ? 'openai' : 'ttsai',
+    url: String(a.url || TTS_DEF.url).trim(),
+    key: String(a.key || TTS_DEF.key).trim(),
+    model: String(a.model || TTS_DEF.model).trim(),
+    voice: String(a.voice || TTS_DEF.voice).trim()
+  };
+}
+let cloudAudio = null;
+let cloudAbort = null;
+let cloudUrls = [];
+function ttsSpeed() { return Math.min(1.5, Math.max(0.6, Number(settings.speakRate) || 1)); }
+function keepCloudUrl(u) {
+  cloudUrls.push(u);
+  /* نشانی‌های قدیمی آزاد شوند تا حافظه پر نشود */
+  while (cloudUrls.length > 12) { try { URL.revokeObjectURL(cloudUrls.shift()); } catch (e) {} }
 }
 const TTS_WEB = () => typeof speechSynthesis !== 'undefined' && typeof SpeechSynthesisUtterance !== 'undefined';
-const TTS_GUIDE = 'صدای فارسی روی این دستگاه نصب نیست. راهنما: اندروید ← تنظیمات ← مدیریت عمومی ← تبدیل متن به گفتار ← موتور Google Speech Services را نصب و فعال کن. ویندوز ← تنظیمات ← زمان و زبان ← گفتار ← افزودن صداها ← فارسی.';
-let ttsVoices = [];
-function loadVoices() {
-  try { ttsVoices = speechSynthesis.getVoices() || []; } catch (e) { ttsVoices = []; }
-}
-if (TTS_WEB()) {
-  loadVoices();
-  try { speechSynthesis.onvoiceschanged = loadVoices; } catch (e) {}
-}
-function pickVoice() {
-  if (settings.voice) {
-    const chosen = ttsVoices.find((x) => x.name === settings.voice || x.voiceURI === settings.voice);
-    if (chosen) return chosen;
+
+/* — حالت ۱: API آسنکرون (مثل tts.ai): ساخت ← نظرسنجی سریع ← دانلود ← پخش — */
+async function cloudTtsOneTtsai(text, signal) {
+  const cfg = ttsCfg();
+  const base = cfg.url.replace(/\/+$/, '') + '/';
+  const headers = { 'Content-Type': 'application/json' };
+  if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+  const r = await fetch(base + 'tts/', {
+    method: 'POST', headers, signal,
+    body: JSON.stringify({ model: cfg.model, text: String(text).slice(0, 1800), voice: cfg.voice, speed: ttsSpeed(), format: 'wav' })
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json().catch(() => null);
+  const uuid = j && (j.uuid || j.id);
+  if (!uuid) throw new Error('پاسخ بدون شناسهٔ کار');
+  /* نظرسنجی سریع: ۴ چکِ نخست هر ۰٫۷ ثانیه (تولید معمولاً چند ثانیه است)، بعد هر ۱٫۴ ثانیه */
+  for (let i = 0; i < 40; i++) {
+    if (signal && signal.aborted) throw new Error('aborted');
+    await new Promise((res) => setTimeout(res, i < 4 ? 700 : 1400));
+    let rr;
+    try { rr = await fetch(base + 'speech/results/?uuid=' + encodeURIComponent(uuid), { headers: cfg.key ? { 'Authorization': 'Bearer ' + cfg.key } : undefined, signal }); } catch (e) { continue; }
+    if (!rr.ok) continue;
+    const jj = await rr.json().catch(() => null);
+    const st = jj && jj.status;
+    if (st === 'completed' && jj.result_url) {
+      const au = await fetch(jj.result_url, { signal });
+      if (!au.ok) throw new Error('دانلود صدا ' + au.status);
+      const u = URL.createObjectURL(await au.blob());
+      keepCloudUrl(u);
+      return u;
+    }
+    if (st === 'failed' || st === 'error') throw new Error('ساخت صدا ناموفق بود');
   }
-  return ttsVoices.find((v) => /^fa/i.test(v.lang)) ||
-         ttsVoices.find((v) => /persian|farsi|فارسی/i.test(v.name)) || null;
+  throw new Error('زمان انتظار صدا تمام شد');
+}
+/* — حالت ۲: API سازگار با OpenAI (مسیر مستقیم /audio/speech) — */
+async function cloudTtsOneOpenai(text, signal) {
+  const cfg = ttsCfg();
+  let b = cfg.url.replace(/\/+$/, '');
+  if (!/audio\/speech$/.test(b)) b += /\/v\d+$/.test(b) ? '/audio/speech' : '/v1/audio/speech';
+  const headers = { 'Content-Type': 'application/json' };
+  if (cfg.key) headers['Authorization'] = 'Bearer ' + cfg.key;
+  const r = await fetch(b, {
+    method: 'POST', headers, signal,
+    body: JSON.stringify({ model: cfg.model, voice: cfg.voice, input: String(text).slice(0, 1800), speed: ttsSpeed(), response_format: 'mp3' })
+  });
+  if (!r.ok) throw new Error('HTTP ' + r.status);
+  const u = URL.createObjectURL(await r.blob());
+  keepCloudUrl(u);
+  return u;
 }
 /* متن بلند را به تکه‌های کوتاه بشکن — موتورهای گفتار متن بلند را نصفه می‌خوانند */
-function chunkText(t) {
+function chunkText(t, limit) {
+  const L = Math.max(80, Number(limit) || 170);
   const parts = [];
   let cur = '';
   const sents = t.split(/(?<=[.!؟?؛:\n])\s+/);
   for (const s of sents) {
     const merged = cur ? cur + ' ' + s : s;
-    if (merged.length > 170) {
+    if (merged.length > L) {
       if (cur) parts.push(cur.trim());
-      if (s.length > 170) {
+      if (s.length > L) {
         let rest = s;
-        while (rest.length > 170) {
-          let cut = rest.lastIndexOf(' ', 170);
-          if (cut < 40) cut = 170;
+        while (rest.length > L) {
+          let cut = rest.lastIndexOf(' ', L);
+          if (cut < 40) cut = L;
           parts.push(rest.slice(0, cut).trim());
           rest = rest.slice(cut);
         }
@@ -1320,8 +1506,10 @@ function chunkText(t) {
   if (cur && cur.trim()) parts.push(cur.trim());
   return parts.filter(Boolean);
 }
+/* تکهٔ ابری کوچک‌تر → اولین صدا زودتر پخش می‌شود (رفع تأخیر «خیلی دیر جواب میده») */
+const cloudChunkText = (t) => chunkText(t, 320);
 
-let speakQueue = []; let speakActive = null; // {btn, timer}
+let speakActive = null; // {btn, timer}
 function setSpeakBtn(btn, on) {
   if (!btn) return;
   btn.classList.toggle('speaking', on);
@@ -1343,8 +1531,10 @@ function cleanForSpeech(t) {
   return s;
 }
 function stopSpeak() {
-  speakQueue = [];
-  try { if (TTS_NATIVE()) AndroidAI.stopSpeak(); } catch (e) {}
+  try { if (cloudAudio) { cloudAudio.pause(); cloudAudio.removeAttribute('src'); } } catch (e) {}
+  cloudAudio = null;
+  try { if (cloudAbort) cloudAbort.abort(); } catch (e) {}
+  cloudAbort = null;
   try { if (TTS_WEB()) speechSynthesis.cancel(); } catch (e) {}
   if (speakActive) {
     clearTimeout(speakActive.timer);
@@ -1352,79 +1542,274 @@ function stopSpeak() {
     speakActive = null;
   }
 }
+/* پل قدیمی اندروید ممکن است این را صدا بزند — بی‌ضرر نگه می‌داریم */
 window.__ttsDone = function () {
-  speakQueue = [];
   if (speakActive) {
     clearTimeout(speakActive.timer);
     setSpeakBtn(speakActive.btn, false);
     speakActive = null;
   }
 };
-function speak(raw, btn) {
+function playCloudUrl(url, resolveOnStart) {
+  return new Promise((resolve, reject) => {
+    try { if (cloudAudio) { cloudAudio.pause(); } } catch (e) {}
+    const a = new Audio();
+    cloudAudio = a;
+    a.src = url;
+    let settled = false;
+    const ok = () => { if (!settled) { settled = true; resolve(); } };
+    const bad = (m) => { if (!settled) { settled = true; reject(new Error(m)); } };
+    if (resolveOnStart) a.onplaying = ok; else a.onended = ok;
+    a.onerror = () => bad('پخش صدا ممکن نشد');
+    a.play().catch(() => bad('پخش صدا مسدود شد'));
+  });
+}
+/* زنجیرهٔ صدا: تکه‌به‌تکه با پیش‌واکشی — تکهٔ بعدی قبل از پایان تکهٔ فعلی ساخته می‌شود */
+function cloudSpeakChain(clean, btn, hooks) {
+  const onState = (hooks && hooks.onState) || function () {};
+  const onDone = (hooks && hooks.onDone) || null;
+  const parts = cloudChunkText(clean);
+  if (!parts.length) { if (onDone) onDone(true); return; }
+  let i = 0, stopped = false;
+  const ctrl = new AbortController();
+  cloudAbort = ctrl;
+  const urls = {};
+  const run = ttsCfg().kind === 'openai' ? cloudTtsOneOpenai : cloudTtsOneTtsai;
+  const start = (idx) => { if (!urls[idx]) urls[idx] = run(parts[idx], ctrl.signal); return urls[idx]; };
+  start(0);
+  const finish = (failed) => {
+    if (stopped) return;
+    stopped = true;
+    try { ctrl.abort(); } catch (x) {}
+    cloudAbort = null;
+    if (speakActive && speakActive.btn === btn) {
+      clearTimeout(speakActive.timer);
+      setSpeakBtn(btn, false);
+      speakActive = null;
+    }
+    onState('idle');
+    if (failed) toast('صدای ابری جواب نداد — اتصال و تنظیمات «صدای ابری» را بررسی کن', true);
+    if (onDone) onDone(!failed);
+  };
+  const playNext = () => {
+    if (stopped) return;
+    if (i >= parts.length) { finish(false); return; }
+    const my = i;
+    onState('speaking');
+    start(my).then((url) => {
+      if (stopped) return;
+      if (my + 1 < parts.length) { try { start(my + 1).catch(() => {}); } catch (e) {} }
+      return playCloudUrl(url).then(() => { if (my === i) i++; playNext(); });
+    }).catch((e) => {
+      if (stopped) return;
+      if (String(e && e.message) === 'aborted') return;
+      finish(true);
+    });
+  };
+  speakActive = { btn: btn, timer: null };
+  setSpeakBtn(btn, true);
+  playNext();
+}
+/* فالبک دسکتاپ (هرگز اندروید — صدای دستگاه حذف شده)؛ فقط وقتی API ابری جواب نداد */
+function desktopWebSpeechFallback(clean, btn, onDone) {
+  if (ENV === 'android') return false;
+  if (!TTS_WEB()) return false;
+  const chunks = chunkText(clean, 170);
+  let idx = 0;
+  const next = () => {
+    if (!speakActive || idx >= chunks.length) {
+      if (speakActive) { clearTimeout(speakActive.timer); setSpeakBtn(speakActive.btn, false); speakActive = null; }
+      if (onDone) onDone(true);
+      return;
+    }
+    const u = new SpeechSynthesisUtterance(chunks[idx++]);
+    u.lang = 'fa-IR';
+    u.rate = Number(settings.speakRate) || 1;
+    u.pitch = 1;
+    u.onend = next; u.onerror = next;
+    try { speechSynthesis.speak(u); } catch (e) { if (onDone) onDone(false); }
+  };
+  speakActive = { btn: btn, timer: null };
+  setSpeakBtn(btn, true);
+  next();
+  return true;
+}
+function speak(raw, btn, hooks) {
   if (!raw) return;
-  if (speakActive && speakActive.btn === btn) { stopSpeak(); return; }
+  if (speakActive && speakActive.btn === btn) { stopSpeak(); if (hooks && hooks.onState) hooks.onState('idle'); return; }
   stopSpeak();
   const clean = cleanForSpeech(raw).slice(0, 6000);
   if (!clean) { toast('متنی برای خواندن نیست', true); return; }
-
-  /* ۱) اندروید: موتور بومی — فقط اگر صدای فارسی دارد، یا کاربر خواندن با صدای پیش‌فرض را بسته است */
-  if (TTS_NATIVE()) {
-    const fa = nativeFaTts();
-    if (fa || settings.ttsFallback) {
-      try { AndroidAI.speak(clean); } catch (e) { toast('خواندن با صدا ممکن نشد', true); return; }
-      speakActive = { btn: btn, timer: setTimeout(window.__ttsDone, 5000 + clean.length * 95) };
-      setSpeakBtn(btn, true);
-      if (!fa) toast('با صدای پیش‌فرض دستگاه خوانده شد؛ برای تلفظ بهترِ فارسی، طبق راهنما صدای فارسی نصب کن', true);
-      return;
+  if (!navigator.onLine) { toast('برای صدا اینترنت لازم است — اتصال را بررسی کن', true); return; }
+  cloudSpeakChain(clean, btn, {
+    onState: hooks ? hooks.onState : null,
+    onDone: (ok) => {
+      if (!ok && !desktopWebSpeechFallback(clean, btn, hooks ? hooks.onDone : null)) {
+        if (hooks && hooks.onDone) hooks.onDone(false);
+      }
     }
-    toast(TTS_GUIDE, true);
-    return;
-  }
-
-  /* ۲) مرورگر و ویندوز: Web Speech با صف جمله‌ها (خواندن کامل، نه نصفه) */
-  if (TTS_WEB()) {
-    loadVoices();
-    const v = pickVoice();
-    if (!v && !settings.ttsFallback) { toast(TTS_GUIDE, true); return; }
-    if (!v) toast('صدای فارسی نصب نیست؛ با صدای پیش‌فرض می‌خوانم', true);
-    const chunks = chunkText(clean);
-    let idx = 0;
-    const next = () => {
-      if (!speakActive || idx >= chunks.length) { window.__ttsDone(); return; }
-      const u = new SpeechSynthesisUtterance(chunks[idx++]);
-      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'fa-IR';
-      u.rate = Number(settings.speakRate) || 1;
-      u.pitch = 1;
-      u.onend = next;
-      u.onerror = next;
-      try { speechSynthesis.speak(u); } catch (e) { window.__ttsDone(); }
-    };
-    speakActive = { btn: btn, timer: null };
-    setSpeakBtn(btn, true);
-    next();
-    return;
-  }
-
-  toast('خواندن با صدا در این دستگاه پشتیبانی نمی‌شود', true);
+  });
 }
-/* تست صدا در تنظیمات */
+/* تست صدا در تنظیمات — با مقادیر لحظه‌ای فرم (حتی قبل از ذخیره) */
 function testSpeak() {
-  speak('سلام! من سوکوت هستم. صدای من کار می‌کند؛ فارسی برایم آسان است.', $('#btn-tts-test'));
-}
-function refreshVoiceList() {
-  const sel = $('#set-voice');
-  if (!sel) return;
-  loadVoices();
-  let opts = '<option value="">خودکار — بهترین صدای فارسیِ موجود</option>';
-  const fa = ttsVoices.filter((v) => /^fa/i.test(v.lang) || /persian|farsi|فارسی/i.test(v.name));
-  const rest = ttsVoices.filter((v) => fa.indexOf(v) === -1);
-  const opt = (v) => '<option value="' + esc(v.name) + '"' + (settings.voice === v.name ? ' selected' : '') + '>' + esc(v.name) + ' (' + esc(v.lang) + ')</option>';
-  if (fa.length) opts += '<optgroup label="صداهای فارسی">' + fa.map(opt).join('') + '</optgroup>';
-  if (rest.length) opts += '<optgroup label="سایر صداها">' + rest.slice(0, 40).map(opt).join('') + '</optgroup>';
-  if (!ttsVoices.length && TTS_NATIVE()) {
-    opts += '<option value="">موتور بومی اندروید (صدای فارسی: ' + (nativeFaTts() ? 'دارد ✓' : 'ندارد — طبق راهنما نصب کن)') + '</option>';
+  const r = $('#tts-test-result');
+  if (r) { r.className = 'test-result'; r.textContent = 'در حال ساخت صدای آزمایشی…'; }
+  const gv = (id) => { const el = $(id); return el ? el.value : ''; };
+  const tmp = { kind: gv('#set-tts-kind') || 'ttsai', url: gv('#set-tts-url').trim(), key: gv('#set-tts-key').trim(), model: gv('#set-tts-model').trim(), voice: gv('#set-tts-voice').trim() };
+  if (!tmp.url) {
+    if (r) { r.className = 'test-result err'; r.textContent = 'آدرس API صدا را وارد کن'; }
+    return;
   }
-  sel.innerHTML = opts;
+  const oldCfg = settings.ttsApi;
+  settings.ttsApi = tmp;
+  const done = (ok, msg) => {
+    settings.ttsApi = oldCfg;
+    if (r) { r.className = 'test-result ' + (ok ? 'ok' : 'err'); r.textContent = msg; }
+  };
+  const ctrl = new AbortController();
+  cloudAbort = ctrl;
+  const run = tmp.kind === 'openai' ? cloudTtsOneOpenai : cloudTtsOneTtsai;
+  run('سلام! این صدای تازهٔ سوکوت است؛ فارسی برایم آسان است.', ctrl.signal)
+    .then((url) => playCloudUrl(url, true))
+    .then(() => done(true, '✓ صدا کار می‌کند — همین صدا پاسخ‌هایت را می‌خواند.'))
+    .catch((e) => {
+      if (String(e && e.message) === 'aborted') { done(false, 'تست لغو شد'); return; }
+      done(false, '✗ صدای ابری جواب نداد: ' + (e && e.message ? e.message : e) + ' — آدرس/کلید/مدل/صدا را بررسی کن');
+    });
+}
+
+/* ============================================================
+   v1.14.0 — گفتگوی صوتی زنده (مثل ChatGPT) با دایرهٔ بزرگِ رنگین
+   تشخیص گفتار فارسی ← ارسال خودکار بعد از سکوت ← پاسخ با صدای ابری
+   ← گوش دادن دوباره (چرخهٔ گفت‌وشنید) — دایره در هر حالت رنگ عوض می‌کند
+   ============================================================ */
+const VoiceMode = { open: false, rec: null, listening: false, wantListen: false, silenceTimer: null, heard: '' };
+function faNum(n) { return String(n).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]); }
+function vcSupport() {
+  try { return !!(window.SpeechRecognition || window.webkitSpeechRecognition); } catch (e) { return false; }
+}
+function vibrate(ms) { try { if (ENV === 'android' && typeof AndroidAI !== 'undefined' && AndroidAI.vibrate) AndroidAI.vibrate(ms); } catch (e) {} }
+function vcSetState(st) {
+  const orb = $('#vc-orb');
+  if (orb) orb.dataset.state = st;
+  const lbl = $('#vc-state');
+  const names = {
+    idle: 'آمادهٔ گفتگو — دکمهٔ میکروفون را بزن و حرف بزن',
+    listening: 'دارم گوش می‌دهم… حرف بزن',
+    thinking: 'دارم فکر می‌کنم…',
+    speaking: 'دارم حرف می‌زنم…'
+  };
+  if (lbl) lbl.textContent = names[st] || '';
+  const dot = $('#vc-live-dot');
+  if (dot) dot.className = 'dot ' + (st === 'idle' ? 'dot-off' : 'dot-on');
+  const mic = $('#btn-vc-mic');
+  if (mic) mic.classList.toggle('listening', st === 'listening');
+}
+function vcEchoHeard(t) {
+  if (!settings.vcTranscript) return;
+  const box = $('#vc-heard');
+  if (box) box.textContent = t || '';
+}
+function vcEchoReply(t) {
+  if (!settings.vcTranscript) return;
+  const box = $('#vc-reply');
+  if (box) box.textContent = String(t || '').slice(0, 400);
+}
+function openVoiceMode() {
+  const bd = $('#voice-backdrop');
+  if (!bd) return;
+  bd.classList.remove('hidden');
+  bd.dataset.vtheme = settings.vmTheme || 'violet';
+  VoiceMode.open = true;
+  vcSetState('idle');
+  vcEchoHeard('');
+  $('#vc-reply').innerHTML = '<span class="vc-hint">پاسخ سوکوت همین‌جا می‌آید و با صدای ابری خوانده می‌شود…</span>';
+  const unsup = $('#vc-unsupported');
+  if (!vcSupport()) {
+    unsup.classList.remove('hidden');
+    $('#vc-unsupported-txt').textContent = 'این دستگاه تشخیص گفتار ندارد (در اندروید، برنامهٔ Google لازم است) — با کیبورد بنویس؛ جواب باز هم با صدای ابری خوانده می‌شود.';
+  } else {
+    unsup.classList.add('hidden');
+    startListening();
+  }
+}
+function closeVoiceMode() {
+  VoiceMode.open = false;
+  VoiceMode.wantListen = false;
+  stopListening();
+  stopSpeak();
+  const bd = $('#voice-backdrop');
+  if (bd) bd.classList.add('hidden');
+}
+function startListening() {
+  if (!VoiceMode.open || !vcSupport() || VoiceMode.listening) return;
+  stopSpeak(); /* گوش دادن و حرف زدن هم‌زمان ممکن نیست */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec;
+  try { rec = new SR(); } catch (e) { return; }
+  rec.lang = settings.vmLang || 'fa-IR';
+  rec.continuous = true;
+  rec.interimResults = true;
+  VoiceMode.rec = rec;
+  VoiceMode.heard = '';
+  vcEchoHeard('…');
+  rec.onresult = (ev) => {
+    let interim = '', finalTxt = '';
+    for (let i = ev.resultIndex; i < ev.results.length; i++) {
+      const t = ev.results[i][0].transcript;
+      if (ev.results[i].isFinal) finalTxt += t; else interim += t;
+    }
+    const shown = fixPersian((finalTxt || interim).trim());
+    if (shown) vcEchoHeard(shown);
+    if (finalTxt.trim()) {
+      VoiceMode.heard = (VoiceMode.heard + ' ' + finalTxt.trim()).trim();
+      /* ارسال خودکار بعد از سکوت — طول تأخیر در تنظیمات گفتگوی صوتی */
+      clearTimeout(VoiceMode.silenceTimer);
+      VoiceMode.silenceTimer = setTimeout(finishVoiceTurn, (Number(settings.vcAutoSend) || 1.5) * 1000);
+    }
+  };
+  rec.onerror = (ev) => {
+    if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') {
+      const unsup = $('#vc-unsupported');
+      if (unsup) {
+        unsup.classList.remove('hidden');
+        const t = $('#vc-unsupported-txt');
+        if (t) t.textContent = 'دسترسی میکروفون داده نشد. اجازهٔ میکروفون را بده یا با کیبورد بنویس — جواب با صدای ابری خوانده می‌شود.';
+      }
+      VoiceMode.wantListen = false;
+    }
+  };
+  rec.onend = () => {
+    VoiceMode.listening = false;
+    if (VoiceMode.wantListen && VoiceMode.open && !VoiceMode.busy) {
+      try { rec.start(); VoiceMode.listening = true; } catch (e) {}
+    }
+  };
+  VoiceMode.wantListen = true;
+  try { rec.start(); VoiceMode.listening = true; vcSetState('listening'); vibrate(30); } catch (e) {}
+}
+function stopListening() {
+  clearTimeout(VoiceMode.silenceTimer);
+  VoiceMode.wantListen = false;
+  try { if (VoiceMode.rec) VoiceMode.rec.stop(); } catch (e) {}
+  VoiceMode.rec = null;
+  VoiceMode.listening = false;
+}
+function finishVoiceTurn() {
+  const text = (VoiceMode.heard || '').trim();
+  vcEchoHeard('');
+  if (!text) { startListening(); return; }
+  if (sendLock) { /* پاسخ قبلی هنوز در راه است — این نوبت را گم نکن */
+    toast('پاسخ قبلی هنوز در راه است — صبر کن…', true);
+    VoiceMode.heard = text;
+    clearTimeout(VoiceMode.silenceTimer);
+    VoiceMode.silenceTimer = setTimeout(finishVoiceTurn, 1500);
+    return;
+  }
+  stopListening();
+  vcSetState('thinking');
+  vibrate(20);
+  send(text); /* همان خط اصلی گفتگو — تاریخچه هم ذخیره می‌شود */
 }
 
 /* ---------- state ---------- */
@@ -1487,8 +1872,9 @@ function addMsgDom(role, html, id) {
     '<div class="bubble"' + (id ? ' id="' + id + '"' : '') + '>' + html + '</div>' +
     (role === 'bot'
       ? '<div class="meta">' +
-        '<button class="speak-btn" title="خواندن با صدا"><svg class="ic ic-sm"><use href="#i-speak"/></svg></button>' +
+        '<button class="speak-btn" title="خواندن با صدای ابری"><svg class="ic ic-sm"><use href="#i-speak"/></svg></button>' +
         '<button class="copy-btn"><svg class="ic ic-sm"><use href="#i-copy"/></svg><span> کپی پاسخ</span></button>' +
+        '<span class="brain-tag hidden"><svg class="ic ic-sm"><use href="#i-chip"/></svg><span class="bt-txt"></span></span>' +
         '<span class="src-chip hidden"><svg class="ic ic-sm"><use href="#i-globe"/></svg><span class="src-txt"></span></span>' +
         '</div>'
       : '') +
@@ -1734,6 +2120,14 @@ async function send(textRaw) {
   const botId = 'bot-' + uid();
   const w = addMsgDom('bot', '<span class="typing"><i></i><i></i><i></i></span>', botId);
   scrollBottom(true);
+  /* v1.14.0: شمارندهٔ ثانیه روی حبابِ «در حال نوشتن» — کاربر می‌بیند برنامه زنده است */
+  const t0 = Date.now();
+  const tTick = setInterval(() => {
+    const tb = w.querySelector('.typing');
+    if (!tb) { clearInterval(tTick); return; }
+    const sec = Math.floor((Date.now() - t0) / 1000);
+    if (sec >= 3) tb.innerHTML = '<i></i><i></i><i></i><span class="t-sec">' + faNum(sec) + ' ثانیه…</span>';
+  }, 1000);
 
   /* پیام‌های محلی این نوبت (تبادل ابزار فقط همین‌جا می‌ماند و ذخیره نمی‌شود) */
   const messages = [{ role: 'system', content: buildSystemPrompt(null) }].concat(buildHistory(c));
@@ -1752,6 +2146,11 @@ async function send(textRaw) {
         settings.model = DEFAULT_VISION_MODEL;
         saveSettings(settings); refreshStatus();
         visionNote = 'تصویر فرستادی؛ برای دیدنش خودکار به مدل بینا «' + prettyModel(DEFAULT_VISION_MODEL) + '» سوئیچ کردم.';
+      } else if (settings.provider === 'freemodel' && FM_VISION.indexOf(chosenModel()) === -1) {
+        /* فری‌مدل: خودکار به نزدیک‌ترین مدل بینای همان سرویس سوئیچ کن */
+        settings.model = FM_DEFAULT_VISION;
+        saveSettings(settings); refreshStatus();
+        visionNote = 'تصویر فرستادی؛ خودکار به مدل بینای فری‌مدل «' + prettyModel(FM_DEFAULT_VISION) + '» سوئیچ کردم.';
       }
       content = [{ type: 'text', text: userText }].concat(imgAtts.map((a) => ({ type: 'image_url', image_url: { url: a.api } })));
     }
@@ -1921,7 +2320,9 @@ async function send(textRaw) {
   }
 
   activeStream = null; setBusy(false); sendLock = false;
+  clearInterval(tTick);
   const usedProvider = activeProvider;
+  const usedModel = overrideModel || chosenModel(usedProvider);
   activeProvider = null; /* نوبت بعد: سرویس اصلی کاربر */
   const bubble = w.querySelector('.bubble');
   let vFinal = stripThink(full).text;
@@ -1935,7 +2336,7 @@ async function send(textRaw) {
   }
   /* v1.10.1: اگر با مغز جایگزین جواب آمد، صادقانه بگو با کدام مغز جواب گرفته */
   if (overrideModel && !finalErr && finalText.trim()) {
-    provNote += '<p class="prov-note"><svg class="ic ic-sm"><use href="#i-chip"/></svg><span>مغز «' + esc(prettyModel(chosenModel('dahl'))) + '» همین لحظه شلوغ بود؛ این پاسخ با مغز جایگزین «' + esc(prettyModel(overrideModel)) + '» داده شد — پیام بعدی دوباره مغز اصلی را امتحان می‌کنم.</span></p>';
+    provNote += '<p class="prov-note"><svg class="ic ic-sm"><use href="#i-chip"/></svg><span>مغز «' + esc(prettyModel(usedProvider === 'dahl' ? chosenModel('dahl') : usedModel)) + '» همین لحظه شلوغ/در دسترس نبود؛ این پاسخ با مغز جایگزین «' + esc(prettyModel(overrideModel)) + '» داده شد — پیام بعدی دوباره مغز اصلی را امتحان می‌کنم.</span></p>';
   }
   if (finalErr) {
     if (!finalText.trim()) bubble.innerHTML = errorHTML(finalErr);
@@ -1947,11 +2348,27 @@ async function send(textRaw) {
   }
   if (searchResults) showSources(w, searchResults);
   w.dataset.raw = finalText;
+  /* v1.14.0: چیپ «با مغز …» — مدلِ واقعیِ پاسخ‌دهنده همیشه دیده می‌شود (رفع شکِ «روی GLM ماند») */
+  const brainTag = w.querySelector('.brain-tag');
+  if (brainTag && usedProvider && finalText.trim()) {
+    const btTxt = brainTag.querySelector('.bt-txt');
+    if (btTxt) btTxt.textContent = 'با مغز ' + prettyModel(usedModel) + ' · ' + (PROV_SHORT[usedProvider] || (PROVIDERS[usedProvider] || {}).name || '');
+    brainTag.classList.remove('hidden');
+  }
   c.msgs.push({ r: 'assistant', c: (finalText || '[خطا] ' + (finalErr || '')).slice(0, 20000) });
   saveChats(chats);
   scrollBottom(false);
-  if (!finalErr && finalText.trim() && settings.autoSpeak) {
-    speak(finalText, w.querySelector('.speak-btn'));
+  if (!finalErr && finalText.trim()) {
+    if (VoiceMode.open) {
+      /* گفتگوی صوتی زنده: پاسخ خوانده می‌شود و چرخه گوش‌دادن ادامه پیدا می‌کند */
+      vcEchoReply(finalText);
+      speak(finalText, w.querySelector('.speak-btn'), {
+        onState: (st) => vcSetState(st),
+        onDone: () => { vcSetState('idle'); if (settings.vcLoop) setTimeout(startListening, 350); }
+      });
+    } else if (settings.autoSpeak) {
+      speak(finalText, w.querySelector('.speak-btn'));
+    }
   }
 }
 
@@ -2072,6 +2489,15 @@ const MODEL_INFO = {
   'deepseek-ai/DeepSeek-V4-Flash-0731': { desc: 'استدلال عمیق و دقیق — عالی برای ریاضی، کدنویسی و مسئله‌های پیچیده.', tags: ['استدلال', 'دقیق'] },
   'openai-fast': { desc: 'مغز رایگان همیشگی — بدون کلید و بدون ثبت‌نام.', tags: ['رایگان', 'سریع'] }
 };
+/* v1.14.0: جزئیات کامل ۲۹ مدل فعال فری‌مدل در انتخاب‌گر — سازنده + قابلیت‌ها + پنجره + قیمت */
+Object.keys(FM_META).forEach((id) => {
+  const m = FM_META[id];
+  const long = (FM_MODELS[id] || '').split('—').slice(1).join('—').trim();
+  MODEL_INFO[id] = {
+    desc: long || ('مدل فعال فری‌مدل از ' + m.by),
+    tags: m.caps.concat(['سازنده: ' + m.by, 'پنجره: ' + m.ctx, 'قیمت: ' + m.price + '/۱M'])
+  };
+});
 const PICK_CUSTOM_OK = ['cloudflare', 'groq', 'gemini', 'zai', 'custom'];
 
 /* v1.10.0: گروه‌بندی مدل‌های کلادفلر برای انتخاب‌گر — هر مدل دقیقاً یک‌بار، بدون تکرار */
@@ -2097,13 +2523,13 @@ function renderModelCards() {
   const list = $('#model-list');
   const desc = $('#model-sheet-desc');
   const nAll = Object.keys(models).length;
-  const faNum = (n) => String(n).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]);
-  if (desc) desc.textContent = 'مدل‌های سرویس «' + p.name + '» (' + faNum(nAll) + ' مدل) — با یک لمس عوض کن؛ فوراً اعمال و ذخیره می‌شود.';
+  const faNum2 = (n) => String(n).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]);
+  if (desc) desc.textContent = 'مدل‌های سرویس «' + p.name + '» (' + faNum2(nAll) + ' مدل) — با یک لمس عوض کن؛ فوراً اعمال و ذخیره می‌شود و چیپِ «با مغز …» زیر هر پاسخ مدلِ واقعی را نشان می‌دهد.';
   const card = (id) => {
     const info = MODEL_INFO[id] || {};
     const nm = String(models[id] || id).split('—')[0].trim();
     const tags = (info.tags || []).map((t) => '<i>' + esc(t) + '</i>').join('');
-    const rec = id === 'zai-org/GLM-5.3-Flash' ? '<i class="mc-tag">پیشنهادی</i>' : '';
+    const rec = (settings.provider === 'freemodel' ? id === 'deepseek-v4.1-flash' : id === 'zai-org/GLM-5.3-Flash') ? '<i class="mc-tag">پیشنهادی</i>' : '';
     return '<button type="button" class="model-card' + (id === curModel ? ' active' : '') + '" data-model="' + esc(id) + '">' +
       '<span class="mc-radio"></span>' +
       '<span class="mc-body"><b>' + esc(nm) + rec + '</b>' +
@@ -2111,17 +2537,19 @@ function renderModelCards() {
       (tags ? '<span class="mc-tags">' + tags + '</span>' : '') +
       '</span></button>';
   };
-  /* v1.10.0: کلادفلر با تیترِ گروه‌بندی — بقیهٔ سرویس‌ها لیست ساده */
-  if (settings.provider === 'cloudflare') {
+  /* v1.10.0: کلادفلر با تیترِ گروه‌بندی — v1.14.0: فری‌مدل هم گروه‌بندی + جزئیات */
+  const grouped = settings.provider === 'cloudflare' || settings.provider === 'freemodel';
+  if (grouped) {
+    const groups = settings.provider === 'freemodel' ? FM_GROUPS : CF_PICK_GROUPS;
     let html = '';
-    for (const g of CF_PICK_GROUPS) {
+    for (const g of groups) {
       const ids = g.ids.filter((id) => models[id]);
       if (!ids.length) continue;
       html += '<div class="mg-title">' + esc(g.title) + '</div>';
       html += ids.map(card).join('');
     }
     /* هر مدلی که در گروه‌ها نیامده (اگر آینده اضافه شد) هم دیده شود */
-    const rest = Object.keys(models).filter((id) => CF_PICK_GROUPS.every((g) => g.ids.indexOf(id) === -1));
+    const rest = Object.keys(models).filter((id) => groups.every((g) => g.ids.indexOf(id) === -1));
     if (rest.length) html += '<div class="mg-title">سایر مدل‌ها</div>' + rest.map(card).join('');
     list.innerHTML = html;
   } else {
@@ -2137,6 +2565,21 @@ function renderModelCards() {
 function applyPickedModel(id, isCustom) {
   settings.model = id;
   if (isCustom) settings.modelCustom = id;
+  /* v1.14.0: انتخاب مدل سراسری قفل شد — اگر مدلِ پیک‌شده متعلق به سرویس دیگری بود،
+     سرویس هم خودکار همان می‌شود تا «تغییر مدل در گفتگو» هیچ‌وقت بی‌اثر نباشد */
+  if (!isCustom) {
+    for (const pid of Object.keys(PROVIDERS)) {
+      if (PROVIDERS[pid].models && PROVIDERS[pid].models[id]) {
+        if (pid !== 'custom' && settings.provider !== pid) {
+          settings.provider = pid;
+          const sp = $('#set-provider');
+          if (sp) sp.value = pid;
+        }
+        break;
+      }
+    }
+  }
+  settings.modelPicked = true;
   saveSettings(settings);
   /* همگام‌سازی با select مخفی تنظیمات تا ذخیرهٔ بعدی هم درست بماند */
   const sel = $('#set-model');
@@ -2568,16 +3011,19 @@ function applyProviderUI() {
   const p = PROVIDERS[modalProvider] || PROVIDERS.dahl;
   const isCF = modalProvider === 'cloudflare';
   const isDahl = modalProvider === 'dahl';
+  const isFM = modalProvider === 'freemodel';
   const acc = $('#field-account');
   if (acc) acc.classList.toggle('hidden', !isCF);
   const tr = $('#token-req');
-  if (tr) tr.classList.toggle('hidden', p.needsToken === false || isDahl);
+  if (tr) tr.classList.toggle('hidden', p.needsToken === false || isDahl || isFM);
   const box = $('#box-keys');
-  if (box) box.classList.toggle('hidden', p.needsToken === false || isDahl);
+  if (box) box.classList.toggle('hidden', p.needsToken === false || isDahl || isFM);
   const dbox = $('#box-dahl-api');
   if (dbox) dbox.classList.toggle('hidden', !isDahl);
+  const fbox = $('#box-fm-api');
+  if (fbox) fbox.classList.toggle('hidden', !isFM);
   const kt = $('#keys-title');
-  if (kt) kt.textContent = (p.needsToken === false && !isDahl) ? 'این سرویس کلید نمی‌خواهد — فقط مدل را انتخاب کن' : 'کلید و حساب سرویس';
+  if (kt) kt.textContent = (p.needsToken === false && !isDahl && !isFM) ? 'این سرویس کلید نمی‌خواهد — فقط مدل را انتخاب کن' : 'کلید و حساب سرویس';
 }
 function rebuildModelSelect() {
   const sel = $('#set-model');
@@ -2613,6 +3059,8 @@ function rebuildModelSelect() {
   $('#provider-hint').innerHTML = (p.needsToken === false
     ? (modalProvider === 'dahl'
       ? 'کلید و آدرس دال از قبل تنظیم شده ✓ — فقط مدل را انتخاب کن و بفرست (تست‌شده با درخواست واقعی)'
+      : modalProvider === 'freemodel'
+      ? 'کلید فری‌مدل از قبل تنظیم شده ✓ — فقط ۲۹ مدلِ «فعال» کاتالوگ رسمی اینجاست (مدل‌های در حال تعمیر حذف شده‌اند). اگر سرویس جواب نداد، خودکار با دال و بعد پولینیشن جواب می‌گیری.'
       : 'بدون کلید و بدون ثبت‌نام — همین حالا کار می‌کند')
     : 'دریافت کلید: <span class="en" dir="ltr">' + esc(p.tokenUrl) + '</span>' + (p.needsAccount ? ' + Account ID' : '')) +
     (modalProvider === 'dahl' ? ' — مدل‌های دال: GLM 5.3 Flash · MiniMax M2.7 · DeepSeek V4 Flash' : '') +
@@ -2629,6 +3077,8 @@ function openSettings() {
   switchTab('general');
   $('#set-dahl-base').value = settings.dahlBase || DAHL_DEFAULT_BASE;
   $('#set-dahl-key').value = settings.dahlToken || DAHL_DEFAULT_KEY;
+  $('#set-fm-base').value = settings.fmBase || FM_DEFAULT_BASE;
+  $('#set-fm-key').value = settings.fmToken || FM_DEFAULT_KEY;
   $('#set-token').value = settings.token;
   $('#set-account').value = settings.account;
   $('#set-base').value = settings.base;
@@ -2642,7 +3092,19 @@ function openSettings() {
   $('#set-autospeak').checked = !!settings.autoSpeak;
   $('#set-rate').value = settings.speakRate || 1;
   $('#rate-val').textContent = settings.speakRate || 1;
-  $('#set-ttsfallback').checked = settings.ttsFallback !== false;
+  /* v1.14.0: بخش API صدای ابری */
+  const ta = settings.ttsApi || TTS_DEF;
+  $('#set-tts-kind').value = ta.kind === 'openai' ? 'openai' : 'ttsai';
+  $('#set-tts-url').value = ta.url || TTS_DEF.url;
+  $('#set-tts-key').value = ta.key || TTS_DEF.key;
+  $('#set-tts-model').value = ta.model || TTS_DEF.model;
+  $('#set-tts-voice').value = ta.voice || TTS_DEF.voice;
+  /* v1.14.0: تنظیمات گفتگوی صوتی */
+  $('#set-vc-autosend').value = String(settings.vcAutoSend || 1.5);
+  $('#set-vc-loop').checked = settings.vcLoop !== false;
+  $('#set-vc-transcript').checked = settings.vcTranscript !== false;
+  $('#set-vm-theme').value = settings.vmTheme || 'violet';
+  $('#set-vm-lang').value = settings.vmLang || 'fa-IR';
   $('#set-imgengine').value = settings.imageEngine || 'auto';
   $('#set-imgstyle').value = settings.imgStyle || 'none';
   $('#set-theme').value = THEME_META[settings.theme] ? settings.theme : 'night';
@@ -2652,7 +3114,7 @@ function openSettings() {
   $('#set-anim').checked = settings.anim !== false;
   $('#set-runerrors').checked = settings.runErrors !== false;
   $('#set-gamebigrun').checked = settings.gameBigRun !== false;
-  refreshVoiceList();
+  $('#tts-test-result').textContent = ''; $('#tts-test-result').className = 'test-result';
   $('#test-result').textContent = ''; $('#test-result').className = 'test-result';
   $('#settings-backdrop').classList.remove('hidden');
 }
@@ -2664,6 +3126,8 @@ function readSettingsFromModal() {
   return {
     dahlToken: ($('#set-dahl-key').value || '').trim() || DAHL_DEFAULT_KEY,
     dahlBase: ($('#set-dahl-base').value || '').trim() || DAHL_DEFAULT_BASE,
+    fmToken: ($('#set-fm-key').value || '').trim() || FM_DEFAULT_KEY,
+    fmBase: ($('#set-fm-base').value || '').trim() || FM_DEFAULT_BASE,
     token: $('#set-token').value.trim(),
     account: $('#set-account').value.trim(),
     base: $('#set-base').value.trim(),
@@ -2677,8 +3141,19 @@ function readSettingsFromModal() {
     agentTools: $('#set-agent').checked,
     autoSpeak: $('#set-autospeak').checked,
     speakRate: Number($('#set-rate').value) || 1,
-    voice: $('#set-voice').value || '',
-    ttsFallback: $('#set-ttsfallback').checked,
+    /* v1.14.0: API صدای ابری + تنظیمات گفتگوی صوتی */
+    ttsApi: {
+      kind: $('#set-tts-kind').value === 'openai' ? 'openai' : 'ttsai',
+      url: ($('#set-tts-url').value || '').trim() || TTS_DEF.url,
+      key: ($('#set-tts-key').value || '').trim() || TTS_DEF.key,
+      model: ($('#set-tts-model').value || '').trim() || TTS_DEF.model,
+      voice: ($('#set-tts-voice').value || '').trim() || TTS_DEF.voice
+    },
+    vcAutoSend: Number($('#set-vc-autosend').value) || 1.5,
+    vcLoop: $('#set-vc-loop').checked,
+    vcTranscript: $('#set-vc-transcript').checked,
+    vmTheme: $('#set-vm-theme').value || 'violet',
+    vmLang: $('#set-vm-lang').value || 'fa-IR',
     imageEngine: $('#set-imgengine').value || 'auto',
     imgStyle: $('#set-imgstyle').value || 'none',
     theme: $('#set-theme').value || 'night',
@@ -2697,7 +3172,11 @@ function saveFromStudioDefaults() {
   if (v) { settings.imgStyle = v.value || 'none'; saveSettings(settings); }
 }
 function saveFromModal() {
-  settings = readSettingsFromModal();
+  /* v1.14.0 (رفع باگ «مدل روی GLM ماند»): ادغام به‌جای جایگزینی!
+     قبلاً readSettingsFromModal همه‌چیز را عوض می‌کرد و پرچم داخلی dahlMigrated
+     گم می‌شد → در اجرای بعدی، مهاجرت یک‌بارهٔ v1.8.0 دوباره اجرا می‌شد و مدلِ
+     انتخابی کاربر را به زور به GLM برمی‌گرداند. حالا پرچم‌های داخلی حفظ می‌شوند */
+  settings = Object.assign({}, settings, readSettingsFromModal());
   saveSettings(settings);
   applyLook();
   refreshStatus(); updateWebBtn(); updateImageBtn(); closeSettings();
@@ -2886,7 +3365,8 @@ function boot() {
     const r = $('#test-result');
     r.className = 'test-result'; r.textContent = 'در حال تست اتصال…';
     const old = settings;
-    settings = readSettingsFromModal();
+    /* v1.14.0: ادغام — پرچم‌های داخلی حذف نشوند (مانند saveFromModal) */
+    settings = Object.assign({}, settings, readSettingsFromModal());
     testConnection((ok, msg) => {
       r.className = 'test-result ' + (ok ? 'ok' : 'err');
       r.textContent = ok ? msg : msg;
@@ -2919,6 +3399,40 @@ function boot() {
   $('#set-temp').addEventListener('input', () => { $('#temp-val').textContent = $('#set-temp').value; });
   $('#set-rate').addEventListener('input', () => { $('#rate-val').textContent = $('#set-rate').value; });
   $('#btn-tts-test').addEventListener('click', testSpeak);
+  /* v1.14.0: عوض‌کردن نوع API صدا — مقادیر پیش‌فرض همان حالت پر می‌شود */
+  $('#set-tts-kind').addEventListener('change', () => {
+    if ($('#set-tts-kind').value === 'openai') {
+      if (!$('#set-tts-url').value.trim() || /tts\.ai/i.test($('#set-tts-url').value)) $('#set-tts-url').value = 'https://api.openai.com/v1';
+      if (!$('#set-tts-model').value.trim() || $('#set-tts-model').value === TTS_DEF.model) $('#set-tts-model').value = 'gpt-4o-mini-tts';
+      if (!$('#set-tts-voice').value.trim() || $('#set-tts-voice').value === TTS_DEF.voice) $('#set-tts-voice').value = 'alloy';
+    } else {
+      $('#set-tts-url').value = TTS_DEF.url;
+      $('#set-tts-model').value = TTS_DEF.model;
+      $('#set-tts-voice').value = TTS_DEF.voice;
+    }
+  });
+
+  /* — v1.14.0: گفتگوی صوتی زنده — */
+  $('#btn-voice').addEventListener('click', openVoiceMode);
+  $('#btn-vc-close').addEventListener('click', closeVoiceMode);
+  $('#voice-backdrop').addEventListener('click', (e) => { if (e.target.id === 'voice-backdrop') closeVoiceMode(); });
+  $('#btn-vc-mic').addEventListener('click', () => {
+    if (VoiceMode.listening) { stopListening(); vcSetState('idle'); }
+    else if (vcSupport()) startListening();
+    else { const u = $('#vc-unsupported'); if (u) u.classList.remove('hidden'); }
+  });
+  $('#btn-vc-stop').addEventListener('click', () => { stopSpeak(); vcSetState(VoiceMode.listening ? 'listening' : 'idle'); });
+  const vcSend = () => {
+    const el = $('#vc-type');
+    const v = (el.value || '').trim();
+    if (!v) return;
+    el.value = '';
+    stopListening();
+    vcSetState('thinking');
+    send(v);
+  };
+  $('#btn-vc-send').addEventListener('click', vcSend);
+  $('#vc-type').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); vcSend(); } });
 
   /* تب‌های تنظیمات */
   document.querySelectorAll('#set-tabs .tab-btn').forEach((b) => {
