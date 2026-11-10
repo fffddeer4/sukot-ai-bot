@@ -4,20 +4,27 @@
 <img src="web/img/hero.jpg" width="180" alt="سوکوت AI" style="border-radius:24px;box-shadow:0 8px 40px rgba(168,85,247,.45)"/>
 </div>
 
-ربات گفتگوی هوشمند فارسی‌زبان با **گفتگوی صوتی زنده با دایرهٔ رنگین**، **۲۹ مدل فعال فری‌مدل (GPT · Claude · Gemini · Grok)**، **ساخت عکس مثل ChatGPT**، **استودیوی بازی‌سازی با اجرای زنده**، «مغز بزرگ»، حافظهٔ بلندمدت و **جستجوی زندهٔ وب**، با قدرت **فری‌مدل · دال (GLM 5.3 Flash) · tts.ai · Cloudflare · Pollinations · Groq · Gemini** — طراحی و ساخت **Sukot** · نسخه **1.14.0**
+ربات گفتگوی هوشمند فارسی‌زبان با **پنل پارامترهای هر مدل (خلاقیت · سهم فکر · توکن خروجی)**، **گفتگوی صوتی زنده با دایرهٔ رنگین**، **۲۹ مدل فعال فری‌مدل (GPT · Claude · Gemini · Grok)**، **ساخت عکس مثل ChatGPT**، **استودیوی بازی‌سازی با اجرای زنده**، «مغز بزرگ»، حافظهٔ بلندمدت و **جستجوی زندهٔ وب**، با قدرت **فری‌مدل · دال (GLM 5.3 Flash) · tts.ai · Cloudflare · Pollinations · Groq · Gemini** — طراحی و ساخت **Sukot** · نسخه **1.15.0**
 
 > 💬 **کانال تلگرام سوکوت:** https://t.me/SUKOT1344
 
 | پلتفرم | فایل | وضعیت ساخت |
 |---|---|---|
 | 🤖 اندروید (APK) | `Sukot-AI-Bot-android.apk` | ![Android](https://github.com/fffddeer4/sukot-ai-bot/actions/workflows/android.yml/badge.svg) |
-| 🪟 ویندوز (نصبی + پرتابل) | `Sukot-AI-Bot-Setup-1.14.0.exe` / `Sukot-AI-Bot-Portable-1.14.0.exe` | ![Windows](https://github.com/fffddeer4/sukot-ai-bot/actions/workflows/windows.yml/badge.svg) |
+| 🪟 ویندوز (نصبی + پرتابل) | `Sukot-AI-Bot-Setup-1.15.0.exe` / `Sukot-AI-Bot-Portable-1.15.0.exe` | ![Windows](https://github.com/fffddeer4/sukot-ai-bot/actions/workflows/windows.yml/badge.svg) |
 | 🌐 وب / PWA | پوشه `web/` | همیشه با repo |
 
 > 📦 **دانلود فایل‌های آماده:** بخش [Releases](../../releases) این ریپازیتوری.
 > 🌐 **نسخه آنلاین (بدون نصب):** https://fffddeer4.github.io/sukot-ai-bot/
 
 ## ✨ امکانات
+
+### پنل «پارامترهای هوش مصنویی» — کنترل فکر و توکنِ هر مدل (1.15.0)
+- 🎛 **دکمهٔ جدید «پارامترها» در نوار بالا**: پنل اختصاصی مثل پنل Parameters فری‌مدل — **خلاقیت (Temperature)**، **سهم فکر و توکن خروجی (Max output tokens تا ۳۲K)**، **تنوع خروجی (Top P)** و **دستور اختصاصی مدل (System prompt)**
+- 🧠 **«هر مغز، تنظیمِ خودش»**: برای هر مدل می‌توانی پارامتر جدا بدهی (مثلاً GLM خلاقیت ۰٫۷ و فکرِ زیاد؛ DeepSeek خلاقیت ۰٫۳ و جواب کوتاه) یا یک تنظیم سراسری برای همهٔ مدل‌ها بگذاری
+- ⚡ پارامترها **واقعاً در بدنهٔ درخواست همهٔ سرویس‌ها** (دال · فری‌مدل · کلادفلر · پولینیشن · Groq · Gemini و…) اعمال می‌شوند — نه فقط ظاهر؛ مدل‌هایی که پارامتر را قبول نمی‌کنند خودکار بدون آن صدا زده می‌شوند
+- 🏷 چیپ نارنجی کنار پاسخ وقتی پارامتری غیرپیش‌فرض است + چیپ‌های سریع توکن (۱K / ۴K / ۱۶K / ۳۲K)
+- 💾 ماندگاری کامل تنظیمات (هر مدل جدا در حافظه) + رابط لمسیِ موبایل و دسکتاپ — ۳۰ تست Playwright پاس
 
 ### فری‌مدل + گفتگوی صوتی زنده + صدای ابری + رفع باگ GLM (1.14.0)
 - 🌍 **سرویس جدید «فری‌مدل»** (`freemodel.in`) با کلید آمادهٔ شخصی — فقط **۲۹ مدلِ «فعال» کاتالوگ رسمی** اضافه شده (GPT-6/5.6 · Claude Opus 5.5/5 · Gemini 3.7 · Grok 4.6 · Kimi K3 · DeepSeek V4.1 و…)؛ ۱۷ مدلِ در حال تعمیر حذف شده‌اند
@@ -145,7 +152,7 @@ gradle -p android assembleDebug
 
 # ویندوز (نیاز به Node 20)
 cd electron && npm install && npm run dist
-# خروجی: electron/dist/Sukot-AI-Bot-Setup-1.8.0.exe + نسخهٔ Portable
+# خروجی: electron/dist/Sukot-AI-Bot-Setup-1.15.0.exe + نسخهٔ Portable
 ```
 
 بیلد هم به‌صورت خودکار با GitHub Actions انجام می‌شود — هر push به `main` یک APK و EXE تازه می‌سازد (تب Actions).
