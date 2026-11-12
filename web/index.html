@@ -175,7 +175,7 @@
           <button class="suggestion"><svg class="ic ic-sm"><use href="#i-code"/></svg><span>یه صفحهٔ شخصی HTML مدرن با تم تیره برایم بساز</span></button>
           <button class="suggestion"><svg class="ic ic-sm"><use href="#i-cap"/></svg><span>فیزیک دهم — قانون اون را با مثال ساده توضیح بده</span></button>
         </div>
-        <p class="w-foot">ساخته‌شده با <svg class="ic ic-sm w-heart"><use href="#i-heart"/></svg> توسط <b>Sukot</b> · <span class="en" dir="ltr">v1.15.0</span></p>
+        <p class="w-foot">ساخته‌شده با <svg class="ic ic-sm w-heart"><use href="#i-heart"/></svg> توسط <b>Sukot</b> · <span class="en" dir="ltr">v1.16.0</span></p>
       </div>
     </div>
 
@@ -401,6 +401,7 @@
         <select id="set-provider">
           <option value="dahl">دال — مغز GLM 5.3 Flash + MiniMax + DeepSeek (کلید آماده سوکوت، تست‌شده ✓)</option>
           <option value="freemodel">فری‌مدل — ۲۹ مدل فعال جهانی: GPT · Claude · Gemini · Grok · DeepSeek (کلید آماده ✓)</option>
+          <option value="coarena">کوآرنا — ۱۸ مدل فعال جهانی: Claude · Gemini · Grok · Kimi · Qwen (کلید آماده ✓)</option>
           <option value="cloudflare">Cloudflare Workers AI — ۲۷ مدل + غول‌های بالای ۳۰۰B</option>
           <option value="pollinations">پولینیشن — رایگانِ کامل، بدون ثبت‌نام و بدون کلید ✓</option>
           <option value="groq">Groq — رایگان بدون کارت بانکی (سریع‌ترین سرعت)</option>
@@ -435,6 +436,19 @@
           <input type="password" id="set-fm-key" placeholder="fm_…" autocomplete="off">
         </label>
         <span class="hint">فقط ۲۹ مدلِ «فعال» کاتالوگ رسمی فری‌مدل در سوکوت اضافه شده (۱۷ مدلِ در حال تعمیر حذف شده‌اند). پنجرهٔ کانال‌متن، بینایی و قیمت هر مدل داخل انتخاب‌گر مدل نوشته شده است. سهمیهٔ این سرویس ماهانه است؛ اگر تمام شد سوکوت خودکار با دال جواب می‌دهد.</span>
+      </div>
+
+      <div class="sub-box hidden" id="box-coa-api">
+        <div class="sub-title">API کوآرنا (coarena.ai — آرنای مدل‌های جهانی)</div>
+        <label class="field">
+          <span>آدرس پایه (Base URL)</span>
+          <input type="text" id="set-coa-base" dir="ltr" placeholder="https://coarena.ai/api/v1" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>کلید API (Key)</span>
+          <input type="password" id="set-coa-key" placeholder="coa_…" autocomplete="off">
+        </label>
+        <span class="hint">هر ۱۸ مدل کوآرنا با درخواست واقعی فارسی تست شده ✓ — همه عکس می‌بینند، فکر می‌کنند و ابزار اجرا می‌کنند (Claude · Gemini · Grok · Kimi · Qwen · GLM و…). همه رایگان‌اند. محدودیت اکانت: حداکثر ۲ درخواست همزمان — اگر شلوغ بود سوکوت خودکار با فری‌مدل و بعد پولینیشن جواب می‌دهد.</span>
       </div>
 
       <div class="sub-box" id="box-keys">
@@ -527,7 +541,7 @@
     <div class="tab-page hidden" data-page="about">
       <div class="sub-box" style="text-align:center">
         <p style="font-size:17px;font-weight:bold;margin:8px 0 2px">سوکوت AI</p>
-        <p class="en" dir="ltr" style="font-size:11px;color:var(--muted2)">v1.15.0 · Sukot AI Bot</p>
+        <p class="en" dir="ltr" style="font-size:11px;color:var(--muted2)">v1.16.0 · Sukot AI Bot</p>
         <p class="hint" style="line-height:2;margin-top:8px">گفتگوی صوتی زنده با دایرهٔ رنگین و صدای ابری فارسی، ۲۹ مدل فعال فری‌مدل (GPT/Claude/Gemini/Grok)، پنل پارامترهای حرفه‌ای هر مدل (Temperature/MaxTokens/TopP/System prompt)، ساخت عکس با هوش مصنوعی، استودیوی بازی‌سازی با اجرای زنده، ۵ دستیار تخصصی، آپلود فایل و عکس، جستجوی زندهٔ وب، قیمت لحظه‌ای ارز، حافظهٔ بلندمدت و سرویس‌های رایگان بدون کارت — روی اندروید، ویندوز و وب.</p>
       </div>
       <div class="modal-actions" style="flex-direction:column;gap:10px">
@@ -660,7 +674,7 @@
       <img class="about-hero" src="img/hero.jpg" alt="سوکوت AI">
     </div>
     <h2 class="about-name">سوکوت AI</h2>
-    <div class="about-ver" dir="ltr">v1.15.0</div>
+    <div class="about-ver" dir="ltr">v1.16.0</div>
     <p class="about-desc">گفتگوی صوتی زنده با دایرهٔ رنگین (مثل ChatGPT) با صدای ابری فارسی، ۲۹ مدل فعال فری‌مدل (GPT · Claude · Gemini · Grok)، پنل پارامترهای حرفه‌ای هر مدل مثل فری‌مدل (خلاقیت · سهم فکر و توکن · Top P · دستور اختصاصی)، ساخت عکس مثل ChatGPT (رایگان، بدون کلید)، استودیوی بازی‌سازی با اجرای زندهٔ بازی داخل خود اپ، سرویس‌های رایگان بدون کارت (پولینیشن، Groq، Gemini)، آپلود فایل و عکس، غول‌های بالای ۳۰۰B، ابزارهای عامل، جستجوی زندهٔ وب، قیمت لحظه‌ای ارز، ۵ دستیار تخصصی و حافظهٔ بلندمدت — روی اندروید، ویندوز و وب.</p>
     <a class="about-tg" href="https://t.me/SUKOT1344" target="_blank" rel="noopener">
       <svg class="ic ic-sm"><use href="#i-telegram"/></svg><span>کانال تلگرام: <b dir="ltr">@SUKOT1344</b></span>

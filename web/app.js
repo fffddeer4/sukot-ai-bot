@@ -52,7 +52,7 @@
 'use strict';
 
 /* ---------- constants ---------- */
-const APP_VERSION = '1.15.0';
+const APP_VERSION = '1.16.0';
 const CREATOR = 'Sukot';
 const DEFAULT_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 const LEGACY_MODEL = '@cf/meta/llama-3.1-8b-instruct-fast';
@@ -149,6 +149,66 @@ const FM_GROUPS = [
   { title: '🟣 خانوادهٔ Claude آنتروپیک', ids: ['claude-sonnet-5-5', 'claude-opus-4-5', 'claude-opus-4.6', 'claude-opus-4.7', 'claude-opus-4.8', 'claude-opus-5', 'claude-opus-5-5', 'claude-fable-5', 'claude-mythos-preview'] },
   { title: '🔬 غول‌های متن‌باز و ابزارهای ویژه', ids: ['kimi-k3', 'qwen3.7-max', 'deepseek-v4-pro-max', 'matilda-cerulean-i', 'codex-auto-review'] }
 ];
+
+/* — سرویس جدید «کوآرنا» (coarena.ai): آرنای مدل‌های جهانی با یک کلید —
+   هر ۱۸ مدل با درخواست واقعی فارسی تست شد ✓ · همه مدل‌ها بینایی + استدلال + ابزار دارند
+   استریم SSE ✓ · پارامترهای temperature/top_p/reasoning_effort پذیرفته می‌شود ✓
+   محدودیت اکانت: حداکثر ۲ درخواست همزمان (سوکوت خودکار مدیریت می‌کند)
+   بازبینی کاتالوگ: ۲۰۲۶-۱۱-۱۳ */
+const COA_DEFAULT_BASE = 'https://coarena.ai/api/v1';
+const COA_DEFAULT_KEY = 'coa_4ba636096b2b18317c4b5bac9b25472e';
+const COA_DEFAULT_MODEL = 'claude-sonnet-5-5';
+const COA_DEFAULT_VISION = 'gemini-3-8-flash';
+const COA_MODELS = {
+  'claude-haiku-5-5': 'Claude Haiku 5.5 — سریع‌ترین مغز آنتروپیک · بینایی · استدلال (پیشنهادی برای گفتگو)',
+  'gemini-3-8-flash': 'Gemini 3.8 Flash — فلشِ جدید گوگل · بینایی (پیشنهادی برای عکس)',
+  'glm-5-3-flash': 'GLM 5.3 Flash — مغز آشنای سوکوت از Z.ai · استدلال و ابزار',
+  'minimax-m3-1-flash': 'MiniMax M3.1 Flash — توربوی MiniMax · استدلال · بینایی',
+  'deepseek-v4-1-flash-1017': 'DeepSeek V4.1 Flash — استدلالِ سریع DeepSeek · بینایی · ابزار',
+  'claude-sonnet-5-5': 'Claude Sonnet 5.5 — عامل ترکیبیِ سریع آنتروپیک · بینایی (پیشنهادی)',
+  'claude-opus-5-5': 'Claude Opus 5.5 — پرچمدار استدلال و کدِ آنتروپیک · بینایی',
+  'claude-fable-5': 'Claude Fable 5 — کدنویسی و استدلال درجه‌یک · بینایی',
+  'claude-fable-5-1': 'Claude Fable 5.1 — نسل ۵٫۱ خانوادهٔ Fable · بینایی',
+  'claude-fable-5-2': 'Claude Fable 5.2 — جدیدترین Fable آنتروپیک · بینایی',
+  'gemini-4-argon': 'Gemini 4 Argon — نسل ۴ گوگل · بینایی · استدلال',
+  'gemini-4-carbon': 'Gemini 4 Carbon — سنگین‌ترین مغز گوگل در کوآرنا · بینایی (برای سؤال‌های خیلی عمیق)',
+  'grok-4-7': 'Grok 4.7 — جدیدترین مدل xAI · بینایی · استدلال',
+  'kimi-k3': 'Kimi K3 — پرچمدار Moonshot · بینایی · استدلال عمیق',
+  'kimi-k3-1-pro': 'Kimi K3.1 Pro — نسخهٔ حرفه‌ای K3 · استدلال ماکزیمم',
+  'qwen3-8-2-4t-a95b': 'Qwen3.8 (۲٫۴T MoE) — غول فعال‌ساز ۹۵B علی‌بابا · بینایی · ابزار',
+  'mimo-v2-6-pro': 'MiMo V2.6 Pro — مغز استدلالی Xiaomi · بینایی · ابزار',
+  'hy4': 'Hy4 — مغز چندوجهی Tencent · بینایی · استدلال'
+};
+/* متادیتای انتخاب‌گر کوآرنا: همه مدل‌ها پنجرهٔ ۱۲۸K · خروجی تا ۱۶K · رایگان (قیمت رسمی کاتالوگ: ۰) */
+const COA_META = {
+  'claude-haiku-5-5': { by: 'Anthropic', caps: ['استدلال', 'بینایی', 'ابزار', 'خیلی سریع'] },
+  'gemini-3-8-flash': { by: 'Google', caps: ['استدلال', 'بینایی', 'ابزار', 'سریع'] },
+  'glm-5-3-flash': { by: 'Z.ai', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'minimax-m3-1-flash': { by: 'MiniMax', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'deepseek-v4-1-flash-1017': { by: 'DeepSeek', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'claude-sonnet-5-5': { by: 'Anthropic', caps: ['استدلال', 'بینایی', 'ابزار', 'پیشنهادی'] },
+  'claude-opus-5-5': { by: 'Anthropic', caps: ['استدلال', 'بینایی', 'ابزار', 'کدنویسی'] },
+  'claude-fable-5': { by: 'Anthropic', caps: ['استدلال', 'بینایی', 'ابزار', 'کدنویسی'] },
+  'claude-fable-5-1': { by: 'Anthropic', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'claude-fable-5-2': { by: 'Anthropic', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'gemini-4-argon': { by: 'Google', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'gemini-4-carbon': { by: 'Google', caps: ['استدلال عمیق', 'بینایی', 'ابزار'] },
+  'grok-4-7': { by: 'xAI', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'kimi-k3': { by: 'Moonshot', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'kimi-k3-1-pro': { by: 'Moonshot', caps: ['استدلال عمیق', 'بینایی', 'ابزار'] },
+  'qwen3-8-2-4t-a95b': { by: 'Alibaba', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'mimo-v2-6-pro': { by: 'Xiaomi', caps: ['استدلال', 'بینایی', 'ابزار'] },
+  'hy4': { by: 'Tencent', caps: ['استدلال', 'بینایی', 'ابزار'] }
+};
+/* گروه‌بندی انتخاب‌گر کوآرنا — ۱۸ مدل، دقیقاً یک‌بار */
+const COA_GROUPS = [
+  { title: '⚡ سریع و اقتصادی — برای گفتگوی روزمره', ids: ['claude-haiku-5-5', 'gemini-3-8-flash', 'glm-5-3-flash', 'minimax-m3-1-flash', 'deepseek-v4-1-flash-1017'] },
+  { title: '🟣 خانوادهٔ Claude آنتروپیک', ids: ['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-fable-5', 'claude-fable-5-1', 'claude-fable-5-2'] },
+  { title: '🌐 گوگل و xAI — جستجوگرهای هوشمند', ids: ['gemini-4-argon', 'gemini-4-carbon', 'grok-4-7'] },
+  { title: '🔬 غول‌های متن‌باز — Kimi · Qwen · MiMo · Tencent', ids: ['kimi-k3', 'kimi-k3-1-pro', 'qwen3-8-2-4t-a95b', 'mimo-v2-6-pro', 'hy4'] }
+];
+/* همهٔ مدل‌های کوآرنا عکس می‌بینند (تست واقعی ✓ — کاتالوگ: vision=true) */
+const COA_VISION = Object.keys(COA_MODELS);
 
 const LS_SET = 'sukot_ai_settings_v1';
 const LS_CHAT = 'sukot_ai_chats_v1';
@@ -346,7 +406,7 @@ function fallbackModel(dead) {
 
 /* ---------- پروایدرها: دال / فری‌مدل / کلادفلر / رایگان‌ها / دلخواه ---------- */
 /* نام کوتاه برای چیپ «با مغز …» زیر هر پاسخ */
-const PROV_SHORT = { dahl: 'دال', freemodel: 'فری‌مدل', cloudflare: 'کلادفلر', pollinations: 'پولینیشن', groq: 'Groq', gemini: 'Gemini', zai: 'Z.ai', custom: 'سرویس دلخواه' };
+const PROV_SHORT = { dahl: 'دال', freemodel: 'فری‌مدل', coarena: 'کوآرنا', cloudflare: 'کلادفلر', pollinations: 'پولینیشن', groq: 'Groq', gemini: 'Gemini', zai: 'Z.ai', custom: 'سرویس دلخواه' };
 const PROVIDERS = {
   dahl: {
     name: 'دال (GLM 5.3 Flash)',
@@ -429,6 +489,18 @@ const PROVIDERS = {
     },
     models: FM_MODELS
   },
+  coarena: {
+    name: 'کوآرنا — ۱۸ مدل فعال جهانی (Claude/Gemini/Grok/Kimi…)',
+    tokenUrl: 'کلید شخصی تو از قبل تنظیم شده — در باکس «API کوآرنا» قابل تغییر است',
+    needsAccount: false,
+    needsToken: false, /* کلید در coaToken جدا ذخیره می‌شود و از قبل پر است */
+    endpoint: (s) => {
+      let b = (s.coaBase || COA_DEFAULT_BASE).trim().replace(/\/+$/, '');
+      if (!/chat\/completions$/.test(b)) b += /\/v\d+$/.test(b) ? '/chat/completions' : '/v1/chat/completions';
+      return b;
+    },
+    models: COA_MODELS
+  },
   custom: {
     name: 'سرویس دلخواه (سازگار با OpenAI)',
     tokenUrl: 'آدرس API را در فیلد پایین وارد کنید',
@@ -446,6 +518,7 @@ function loadSettings() {
     token: '', account: '', base: '',
     dahlToken: DAHL_DEFAULT_KEY, dahlBase: DAHL_DEFAULT_BASE,
     fmToken: FM_DEFAULT_KEY, fmBase: FM_DEFAULT_BASE,
+    coaToken: COA_DEFAULT_KEY, coaBase: COA_DEFAULT_BASE,
     provider: 'dahl',
     model: DEFAULT_MODEL, modelCustom: '',
     sys: '', temp: 0.7, topP: 1, maxTok: 0, mParams: {}, style: 'detailed',
@@ -477,6 +550,9 @@ function loadSettings() {
   if (!out.dahlBase) out.dahlBase = DAHL_DEFAULT_BASE;
   if (!out.fmToken) out.fmToken = FM_DEFAULT_KEY;
   if (!out.fmBase) out.fmBase = FM_DEFAULT_BASE;
+  /* v1.16.0: سرویس کوآرنا — کلید و آدرس از قبل تنظیم است */
+  if (!out.coaToken) out.coaToken = COA_DEFAULT_KEY;
+  if (!out.coaBase) out.coaBase = COA_DEFAULT_BASE;
   /* v1.14.0: تنظیمات API صدای ابری — پیش‌فرض tts.ai (صدای فارسی امیر) */
   if (!out.ttsApi || typeof out.ttsApi !== 'object') {
     out.ttsApi = { kind: 'ttsai', url: TTS_DEF.url, key: TTS_DEF.key, model: TTS_DEF.model, voice: TTS_DEF.voice };
@@ -752,8 +828,8 @@ if (ENV === 'electron') {
 
 /* SSE line parser shared by every transport.
    اگر سرور با وضعیت ۲۰۰ ولی بدنهٔ خطا جواب بدهد، خطا گم نشود: */
-function createSSEParser(onDelta) {
-  let buf = '', lastErr = null, sawContent = false, reasoningMode = false;
+function createSSEParser(onDelta, onSseDone) {
+  let buf = '', lastErr = null, sawContent = false, reasoningMode = false, doneAnnounced = false;
   const extract = (j) => {
     if (j && (j.error || j.errors)) { lastErr = JSON.stringify(j.error || j.errors); return; }
     const d = j.choices && j.choices[0] && (j.choices[0].delta || j.choices[0].message || {});
@@ -776,7 +852,15 @@ function createSSEParser(onDelta) {
         const line = raw.trim();
         if (!line.startsWith('data:')) continue;
         const data = line.slice(5).trim();
-        if (!data || data === '[DONE]') continue;
+        if (!data) continue;
+        if (data === '[DONE]') {
+          /* پایان استاندارد استریم — فوراً اتصال را تمام کن (منتظر EOF نمان) */
+          if (!doneAnnounced) {
+            doneAnnounced = true;
+            if (onSseDone) { try { onSseDone(); } catch (e) {} }
+          }
+          continue;
+        }
         try { extract(JSON.parse(data)); } catch (e) { /* partial json — ignore */ }
       }
     },
@@ -798,6 +882,8 @@ function friendlyError(status, bodyText) {
     const j = JSON.parse(bodyText);
     if (j.errors && j.errors[0]) { code = j.errors[0].code; msg = j.errors[0].message || ''; }
     if (j.error && j.error.message) { msg = j.error.message; code = j.error.code || ''; }
+    /* v1.16.0: فرمت سادهٔ کوآرنا — پیام خطا در سطح بالای JSON ({"message": "…"}) */
+    if (!msg && typeof j.message === 'string') { msg = j.message; }
   } catch (e) { msg = (bodyText || '').slice(0, 200); }
 
   /* خطاهای سطح مدل → تگ فالبک: سوکوت خودکار با مدل پایدار ادامه می‌دهد */
@@ -831,6 +917,11 @@ function friendlyError(status, bodyText) {
   /* v1.10.1: شلوغی لحظه‌ای مغز دال (model_concurrency) — سوکوت خودکار با مغز آزادِ همان سرویس ادامه می‌دهد
      بدنهٔ خطا: "Other models available now: MiniMaxAI/MiniMax-M2.7, deepseek-ai/DeepSeek-V4-Flash-0731."
      → لیست مدل‌های آزاد استخراج و در BUSY_ALT_MODELS برای فالبک فوری نگه داشته می‌شود */
+  /* v1.16.0: کوآرنا — سقف ۲ درخواستِ همزمانِ اکانت؛ مثل شلوغی مدیریت می‌شود */
+  if (/calls in flight|in flight for this account/i.test(msg)) {
+    return '[model-busy] کوآرنا همین لحظه به سقف ۲ درخواستِ همزمانِ اکانت رسیده — سوکوت خودکار ادامه می‌دهد.';
+  }
+
   if (code === 'model_concurrency' || /concurrency capacity|at concurrency/i.test(msg)) {
     BUSY_ALT_MODELS = [];
     /* توجه: شناسهٔ مدل‌ها خودشان نقطه دارند (مثل MiniMax-M2.7) → تا «. You can switch» می‌گیریم، نه تا اولین نقطه */
@@ -857,14 +948,27 @@ function translateErr(err) {
    Every transport delivers RAW body chunks — SSE parsing runs centrally. */
 function streamRequest(url, headers, body, onDelta, onDone) {
   const cbId = uid();
-  const parser = createSSEParser(onDelta);
+  let finished = false;
+  let transportAbort = null; /* لغوِ مخصوص هر محیط — برای بستن اتصال بعد از [DONE] */
+  /* v1.16.0: terminator استاندارد OpenAI «data: [DONE]» — سرورهایی مثل کوآرنا بعد از [DONE]
+     اتصال را فوراً نمی‌بندند؛ منتظرِ EOF ماندن، پاسخ را تا ابد «در حال نوشتن» نگه می‌داشت */
+  const onSseDone = () => {
+    setTimeout(() => {
+      try { if (transportAbort) transportAbort(); } catch (e) {}
+      handleDone(null);
+    }, 50);
+  };
+  const parser = createSSEParser(onDelta, onSseDone);
   const handleChunk = (raw) => { try { parser.push(raw); } catch (e) {} };
   const handleDone = (err) => {
+    if (finished) return;
+    finished = true;
     try { parser.end(); } catch (e) {}
     if (!err) {
       const perr = parser.getError();
       if (perr) err = friendlyError(0, perr);
     }
+    pendingStreams.delete(cbId);
     onDone(err);
   };
 
@@ -875,7 +979,8 @@ function streamRequest(url, headers, body, onDelta, onDone) {
     }
     pendingStreams.set(cbId, { onDelta: handleChunk, onDone: handleDone });
     AndroidAI.request(cbId, url, JSON.stringify(headers), JSON.stringify(body));
-    return { stop: () => { try { AndroidAI.cancel(cbId); } catch (e) {} } };
+    transportAbort = () => { try { AndroidAI.cancel(cbId); } catch (e) {} };
+    return { stop: transportAbort };
   }
   if (ENV === 'electron') {
     if (!window.electronAPI) {
@@ -884,10 +989,12 @@ function streamRequest(url, headers, body, onDelta, onDone) {
     }
     pendingStreams.set(cbId, { onDelta: handleChunk, onDone: handleDone });
     window.electronAPI.request({ id: cbId, url, headers, body });
-    return { stop: () => { try { window.electronAPI.cancel(cbId); } catch (e) {} } };
+    transportAbort = () => { try { window.electronAPI.cancel(cbId); } catch (e) {} };
+    return { stop: transportAbort };
   }
   /* web */
   const ctrl = new AbortController();
+  transportAbort = () => { try { ctrl.abort(); } catch (e) {} };
   pendingStreams.set(cbId, { onDelta: handleChunk, onDone: handleDone, abort: ctrl });
   (async () => {
     try {
@@ -1126,8 +1233,10 @@ function testConnection(cb) {
   const tryModel = (model, retried, note) => {
     /* مدل‌های استدلالی دال فکرشان را از سهم می‌خورند — با سهم کم جوابی نمی‌آید */
     const isDahlTest = settings.provider === 'dahl';
+    /* v1.16.0: کوآرنا سهم بزرگ‌تر می‌خواهد — مدل‌های استدلالی فکر را از همین سهم می‌خورند */
+    const isCoaTest = settings.provider === 'coarena';
     const body = {
-      model: model, stream: true, max_tokens: isDahlTest ? 600 : 60,
+      model: model, stream: true, max_tokens: isCoaTest ? 2600 : (isDahlTest ? 600 : 60),
       messages: [{ role: 'user', content: 'سلام! فقط بگو: اتصال برقرار است' }]
     };
     let acc = '';
@@ -1136,6 +1245,11 @@ function testConnection(cb) {
       if (err && err.indexOf('[model-unavailable]') !== -1 && !retried) {
         const alt = fallbackModel(model);
         tryModel(alt, true, 'مدل «' + prettyModel(model) + '» روی این حساب فعال نیست — تست با «' + prettyModel(alt) + '»: ');
+        return;
+      }
+      /* v1.16.0: کوآرنا شلوغ بود (سقف ۲ درخواست همزمان)؟ یک بار با وقفهٔ کوتاه دوباره تست کن */
+      if (err && err.indexOf('[model-busy]') !== -1 && settings.provider === 'coarena' && !retried) {
+        setTimeout(() => tryModel(model, true, 'کوآرنا همین لحظه در صف بود — تستِ دوباره: '), 1800);
         return;
       }
       /* v1.10.1: مغز دال شلوغ بود؟ تست با مغزِ آزادِ همان سرویس (یک بار) */
@@ -1175,6 +1289,7 @@ function curProvider() { return activeProvider || settings.provider || 'cloudfla
 function providerChain() {
   const chain = [settings.provider];
   if (settings.provider === 'freemodel') chain.push('dahl'); /* فری‌مدل ← دال ← رایگان */
+  if (settings.provider === 'coarena') chain.push('freemodel'); /* کوآرنا ← فری‌مدل ← رایگان */
   if (settings.provider !== 'pollinations') chain.push('pollinations'); /* نگهبان رایگانِ آخر */
   return chain;
 }
@@ -1184,6 +1299,7 @@ function apiUrl(p) {
   /* سرویس دال و فری‌مدل آدرس مخصوص خودشان را دارند (override دستی اثر نمی‌گذارد) */
   if (pid === 'dahl') return (PROVIDERS.dahl.endpoint)(s);
   if (pid === 'freemodel') return (PROVIDERS.freemodel.endpoint)(s);
+  if (pid === 'coarena') return (PROVIDERS.coarena.endpoint)(s);
   /* override دستی همیشه اولویت دارد (برای تست/سرویس دلخواه) */
   if (s.base && s.base.trim()) {
     let b = s.base.trim().replace(/\/+$/, '');
@@ -1203,6 +1319,7 @@ function apiHeaders(p) {
   /* پولینیشن بدون کلید کار می‌کند — هدر احراز فقط وقتی توکن هست */
   const tok = pid === 'dahl' ? (settings.dahlToken || DAHL_DEFAULT_KEY).trim()
     : pid === 'freemodel' ? (settings.fmToken || FM_DEFAULT_KEY).trim()
+    : pid === 'coarena' ? (settings.coaToken || COA_DEFAULT_KEY).trim()
     : (settings.token || '').trim();
   if (tok) h['Authorization'] = 'Bearer ' + tok;
   return h;
@@ -1217,6 +1334,10 @@ function chosenModel(p) {
     const ids = Object.keys(PROVIDERS.freemodel.models);
     return ids.indexOf(settings.model) !== -1 ? settings.model : FM_DEFAULT_MODEL;
   }
+  if (pid === 'coarena') {
+    const ids = Object.keys(PROVIDERS.coarena.models);
+    return ids.indexOf(settings.model) !== -1 ? settings.model : COA_DEFAULT_MODEL;
+  }
   if (pid === 'pollinations') return 'openai-fast';
   return settings.model === 'custom' ? (settings.modelCustom || '').trim() : settings.model;
 }
@@ -1225,6 +1346,7 @@ function prettyModel(id) {
   if (MODEL_NAMES[id]) return MODEL_NAMES[id];
   if (PROVIDERS.dahl.models[id]) return PROVIDERS.dahl.models[id].split('—')[0].trim();
   if (PROVIDERS.freemodel.models[id]) return PROVIDERS.freemodel.models[id].split('—')[0].trim();
+  if (PROVIDERS.coarena.models[id]) return PROVIDERS.coarena.models[id].split('—')[0].trim();
   if (id === 'openai-fast') return 'مغز رایگان پولینیشن';
   return id.length > 26 ? id.slice(0, 26) + '…' : id;
 }
@@ -2173,6 +2295,11 @@ async function send(textRaw) {
         settings.model = FM_DEFAULT_VISION;
         saveSettings(settings); refreshStatus();
         visionNote = 'تصویر فرستادی؛ خودکار به مدل بینای فری‌مدل «' + prettyModel(FM_DEFAULT_VISION) + '» سوئیچ کردم.';
+      } else if (settings.provider === 'coarena' && COA_VISION.indexOf(chosenModel()) === -1) {
+        /* کوآرنا: همهٔ مدل‌ها بینا هستند (تست واقعی ✓) — این شاخه فقط برای اطمینان است */
+        settings.model = COA_DEFAULT_VISION;
+        saveSettings(settings); refreshStatus();
+        visionNote = 'تصویر فرستادی؛ خودکار به مدل بینای کوآرنا «' + prettyModel(COA_DEFAULT_VISION) + '» سوئیچ کردم.';
       }
       content = [{ type: 'text', text: userText }].concat(imgAtts.map((a) => ({ type: 'image_url', image_url: { url: a.api } })));
     }
@@ -2206,8 +2333,8 @@ async function send(textRaw) {
   let maxTokens = style.max_tokens;
   /* v1.15.0: اگر سهم اختصاصی توکن/فکر در «پارامترهای مدل» تنظیم شده باشد، اولویت دارد */
   if (mp.maxTok > 0) maxTokens = mp.maxTok;
-  /* مدل‌های استدلالی دال فکرشان را از سهم max_tokens مصرف می‌کنند — سهم کمتر از حداقل کافی نیست */
-  const willUseDahl = settings.provider === 'dahl';
+  /* مدل‌های استدلالی دال و کوآرنا فکرشان را از سهم max_tokens مصرف می‌کنند — سهم کمتر از حداقل کافی نیست */
+  const willUseDahl = settings.provider === 'dahl' || settings.provider === 'coarena';
   if (willUseDahl) maxTokens = Math.max(maxTokens, DAHL_MIN_TOKENS);
 
   const renderAcc = (rawAcc) => {
@@ -2259,7 +2386,7 @@ async function send(textRaw) {
 
     /* مدل استدلالی فکر کرد، سهم توکن تمام شد ولی جوابی نیامد؟
        یک بار با سهم بزرگ‌تر ادامه بده (تست واقعی دال: با ۱۰۰ توکن فقط فکر می‌آید) */
-    if (!finalErr && !stripThink(acc).text && activeProvider === 'dahl' && !reasoningRetried) {
+    if (!finalErr && !stripThink(acc).text && (activeProvider === 'dahl' || activeProvider === 'coarena') && !reasoningRetried) {
       reasoningRetried = true;
       maxTokens = Math.min(mp.maxTok > 0 ? mp.maxTok : 8192, Math.max(DAHL_MIN_TOKENS, maxTokens * 2));
       w.querySelector('.bubble').innerHTML = toolNoteHTML('مدل در حال فکر کردن بوده و سهم پاسخ تمام شده — خودکار با سهم بزرگ‌تر ادامه می‌دهم…');
@@ -2523,6 +2650,15 @@ Object.keys(FM_META).forEach((id) => {
     tags: m.caps.concat(['سازنده: ' + m.by, 'پنجره: ' + m.ctx, 'قیمت: ' + m.price + '/۱M'])
   };
 });
+/* v1.16.0: جزئیات کامل ۱۸ مدل فعال کوآرنا — کلیدِ coa: تا با مدل‌های هم‌نامِ فری‌مدل قاطی نشود */
+Object.keys(COA_META).forEach((id) => {
+  const m = COA_META[id];
+  const long = (COA_MODELS[id] || '').split('—').slice(1).join('—').trim();
+  MODEL_INFO['coa:' + id] = {
+    desc: long || ('مدل فعال کوآرنا از ' + m.by),
+    tags: m.caps.concat(['سازنده: ' + m.by, 'پنجره: ۱۲۸K', 'خروجی: ۱۶K', 'رایگان'])
+  };
+});
 const PICK_CUSTOM_OK = ['cloudflare', 'groq', 'gemini', 'zai', 'custom'];
 
 /* v1.10.0: گروه‌بندی مدل‌های کلادفلر برای انتخاب‌گر — هر مدل دقیقاً یک‌بار، بدون تکرار */
@@ -2551,10 +2687,12 @@ function renderModelCards() {
   const faNum2 = (n) => String(n).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]);
   if (desc) desc.textContent = 'مدل‌های سرویس «' + p.name + '» (' + faNum2(nAll) + ' مدل) — با یک لمس عوض کن؛ فوراً اعمال و ذخیره می‌شود و چیپِ «با مغز …» زیر هر پاسخ مدلِ واقعی را نشان می‌دهد.';
   const card = (id) => {
-    const info = MODEL_INFO[id] || {};
+    /* v1.16.0: متادیتای مخصوص همان سرویس (کوآرنا = coa: تا با فری‌مدل قاطی نشود) */
+    const info = MODEL_INFO[(settings.provider === 'coarena' ? 'coa:' : '') + id] || MODEL_INFO[id] || {};
     const nm = String(models[id] || id).split('—')[0].trim();
     const tags = (info.tags || []).map((t) => '<i>' + esc(t) + '</i>').join('');
-    const rec = (settings.provider === 'freemodel' ? id === 'deepseek-v4.1-flash' : id === 'zai-org/GLM-5.3-Flash') ? '<i class="mc-tag">پیشنهادی</i>' : '';
+    const recId = settings.provider === 'freemodel' ? 'deepseek-v4.1-flash' : settings.provider === 'coarena' ? COA_DEFAULT_MODEL : 'zai-org/GLM-5.3-Flash';
+    const rec = id === recId ? '<i class="mc-tag">پیشنهادی</i>' : '';
     return '<button type="button" class="model-card' + (id === curModel ? ' active' : '') + '" data-model="' + esc(id) + '">' +
       '<span class="mc-radio"></span>' +
       '<span class="mc-body"><b>' + esc(nm) + rec + '</b>' +
@@ -2562,10 +2700,10 @@ function renderModelCards() {
       (tags ? '<span class="mc-tags">' + tags + '</span>' : '') +
       '</span></button>';
   };
-  /* v1.10.0: کلادفلر با تیترِ گروه‌بندی — v1.14.0: فری‌مدل هم گروه‌بندی + جزئیات */
-  const grouped = settings.provider === 'cloudflare' || settings.provider === 'freemodel';
+  /* v1.10.0: کلادفلر با تیترِ گروه‌بندی — v1.14.0: فری‌مدل — v1.16.0: کوآرنا */
+  const grouped = settings.provider === 'cloudflare' || settings.provider === 'freemodel' || settings.provider === 'coarena';
   if (grouped) {
-    const groups = settings.provider === 'freemodel' ? FM_GROUPS : CF_PICK_GROUPS;
+    const groups = settings.provider === 'coarena' ? COA_GROUPS : (settings.provider === 'freemodel' ? FM_GROUPS : CF_PICK_GROUPS);
     let html = '';
     for (const g of groups) {
       const ids = g.ids.filter((id) => models[id]);
@@ -2593,15 +2731,20 @@ function applyPickedModel(id, isCustom) {
   /* v1.14.0: انتخاب مدل سراسری قفل شد — اگر مدلِ پیک‌شده متعلق به سرویس دیگری بود،
      سرویس هم خودکار همان می‌شود تا «تغییر مدل در گفتگو» هیچ‌وقت بی‌اثر نباشد */
   if (!isCustom) {
-    for (const pid of Object.keys(PROVIDERS)) {
-      if (PROVIDERS[pid].models && PROVIDERS[pid].models[id]) {
-        if (pid !== 'custom' && settings.provider !== pid) {
-          settings.provider = pid;
-          const sp = $('#set-provider');
-          if (sp) sp.value = pid;
-        }
-        break;
+    /* v1.16.0: اگر همان سرویسِ فعلی هم این مدل را دارد، سرویس عوض نشود
+       (مدل‌های هم‌نام مثل kimi-k3 و claude-sonnet-5-5 بین فری‌مدل و کوآرنا) */
+    let owner = null;
+    const cur = PROVIDERS[settings.provider];
+    if (cur && cur.models && cur.models[id]) owner = settings.provider;
+    else {
+      for (const pid of Object.keys(PROVIDERS)) {
+        if (PROVIDERS[pid].models && PROVIDERS[pid].models[id]) { owner = pid; break; }
       }
+    }
+    if (owner && owner !== 'custom' && settings.provider !== owner) {
+      settings.provider = owner;
+      const sp = $('#set-provider');
+      if (sp) sp.value = owner;
     }
   }
   settings.modelPicked = true;
@@ -3141,18 +3284,21 @@ function applyProviderUI() {
   const isCF = modalProvider === 'cloudflare';
   const isDahl = modalProvider === 'dahl';
   const isFM = modalProvider === 'freemodel';
+  const isCoa = modalProvider === 'coarena';
   const acc = $('#field-account');
   if (acc) acc.classList.toggle('hidden', !isCF);
   const tr = $('#token-req');
-  if (tr) tr.classList.toggle('hidden', p.needsToken === false || isDahl || isFM);
+  if (tr) tr.classList.toggle('hidden', p.needsToken === false || isDahl || isFM || isCoa);
   const box = $('#box-keys');
-  if (box) box.classList.toggle('hidden', p.needsToken === false || isDahl || isFM);
+  if (box) box.classList.toggle('hidden', p.needsToken === false || isDahl || isFM || isCoa);
   const dbox = $('#box-dahl-api');
   if (dbox) dbox.classList.toggle('hidden', !isDahl);
   const fbox = $('#box-fm-api');
   if (fbox) fbox.classList.toggle('hidden', !isFM);
+  const cbox = $('#box-coa-api');
+  if (cbox) cbox.classList.toggle('hidden', !isCoa);
   const kt = $('#keys-title');
-  if (kt) kt.textContent = (p.needsToken === false && !isDahl && !isFM) ? 'این سرویس کلید نمی‌خواهد — فقط مدل را انتخاب کن' : 'کلید و حساب سرویس';
+  if (kt) kt.textContent = (p.needsToken === false && !isDahl && !isFM && !isCoa) ? 'این سرویس کلید نمی‌خواهد — فقط مدل را انتخاب کن' : 'کلید و حساب سرویس';
 }
 function rebuildModelSelect() {
   const sel = $('#set-model');
@@ -3190,9 +3336,12 @@ function rebuildModelSelect() {
       ? 'کلید و آدرس دال از قبل تنظیم شده ✓ — فقط مدل را انتخاب کن و بفرست (تست‌شده با درخواست واقعی)'
       : modalProvider === 'freemodel'
       ? 'کلید فری‌مدل از قبل تنظیم شده ✓ — فقط ۲۹ مدلِ «فعال» کاتالوگ رسمی اینجاست (مدل‌های در حال تعمیر حذف شده‌اند). اگر سرویس جواب نداد، خودکار با دال و بعد پولینیشن جواب می‌گیری.'
+      : modalProvider === 'coarena'
+      ? 'کلید کوآرنا از قبل تنظیم شده ✓ — هر ۱۸ مدل با درخواست واقعی فارسی تست شده‌اند و همه عکس می‌بینند. محدودیت: حداکثر ۲ درخواست همزمان؛ اگر شلوغ بود خودکار با فری‌مدل و بعد پولینیشن جواب می‌گیری.'
       : 'بدون کلید و بدون ثبت‌نام — همین حالا کار می‌کند')
     : 'دریافت کلید: <span class="en" dir="ltr">' + esc(p.tokenUrl) + '</span>' + (p.needsAccount ? ' + Account ID' : '')) +
     (modalProvider === 'dahl' ? ' — مدل‌های دال: GLM 5.3 Flash · MiniMax M2.7 · DeepSeek V4 Flash' : '') +
+    (modalProvider === 'coarena' ? ' — پیشنهادی: Claude Sonnet 5.5 برای گفتگو · Gemini 3.8 Flash برای عکس · پارامترهای هر مدل در دکمهٔ «پارامترها»' : '') +
     (modalProvider === 'pollinations' ? ' — محدودیت رایگان: هر ۴۵ ثانیه یک پیام؛ برای کار سنگین کلادفلر یا Groq را انتخاب کن' : '') +
     (modalProvider === 'groq' ? ' — رایگان حدود ۳۰ درخواست در دقیقه' : '') +
     (modalProvider === 'zai' ? ' — مدل‌های جدیدتر GLM را می‌توانی دستی بنویسی (مثل glm-5.x)' : '');
@@ -3208,6 +3357,8 @@ function openSettings() {
   $('#set-dahl-key').value = settings.dahlToken || DAHL_DEFAULT_KEY;
   $('#set-fm-base').value = settings.fmBase || FM_DEFAULT_BASE;
   $('#set-fm-key').value = settings.fmToken || FM_DEFAULT_KEY;
+  $('#set-coa-base').value = settings.coaBase || COA_DEFAULT_BASE;
+  $('#set-coa-key').value = settings.coaToken || COA_DEFAULT_KEY;
   $('#set-token').value = settings.token;
   $('#set-account').value = settings.account;
   $('#set-base').value = settings.base;
@@ -3257,6 +3408,8 @@ function readSettingsFromModal() {
     dahlBase: ($('#set-dahl-base').value || '').trim() || DAHL_DEFAULT_BASE,
     fmToken: ($('#set-fm-key').value || '').trim() || FM_DEFAULT_KEY,
     fmBase: ($('#set-fm-base').value || '').trim() || FM_DEFAULT_BASE,
+    coaToken: ($('#set-coa-key').value || '').trim() || COA_DEFAULT_KEY,
+    coaBase: ($('#set-coa-base').value || '').trim() || COA_DEFAULT_BASE,
     token: $('#set-token').value.trim(),
     account: $('#set-account').value.trim(),
     base: $('#set-base').value.trim(),
